@@ -71,3 +71,28 @@ After approval, your PR can be merged by a maintainer.
 ---
 
 If you are unsure about the workflow, ask the team before pushing changes.
+
+## 🔄 Keep Your Branch Up-to-Date
+
+Before you start working on your branch, pull the latest changes from `main` so you can merge any upstream updates into your branch.
+
+Make sure you are on your branch before executing these commands (replace <yourBranchName>):
+
+```bash
+# verify current branch
+git branch --show-current
+
+# fetch latest refs
+git fetch
+
+# check status (if error, consult the team lead)
+git status
+
+# switch to main and pull latest
+git switch main
+git pull origin main
+
+# switch back to your branch and merge main
+git switch <yourBranchName>
+git merge main
+```
