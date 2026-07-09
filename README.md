@@ -24,6 +24,17 @@ git fetch origin
 git pull origin main
 ```
 
+## 📦 Install Dependencies
+
+This project uses `uv` for fast, reliable Python dependency management:
+
+```bash
+pip install uv
+uv sync
+```
+
+This will install all required dependencies specified in the project configuration.
+
 ## 🌿 Create a Feature Branch
 
 Use a consistent branch naming convention:
