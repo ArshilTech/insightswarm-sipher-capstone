@@ -76,7 +76,7 @@ If you are unsure about the workflow, ask the team before pushing changes.
 
 Before you start working on your branch, pull the latest changes from `main` so you can merge any upstream updates into your branch.
 
-Make sure you are on your branch before executing these commands (replace <yourBranchName>):
+Make sure you are on your branch before executing these commands:
 
 ```bash
 # verify current branch
