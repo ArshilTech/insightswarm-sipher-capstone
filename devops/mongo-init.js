@@ -1,0 +1,1 @@
+// MongoDB initialization script placeholder

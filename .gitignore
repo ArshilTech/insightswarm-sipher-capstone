@@ -1,11 +1,23 @@
-# Python-generated files
+# Byte-compiled / optimized / DLL files (Python)
 __pycache__/
-*.py[oc]
-build/
-dist/
-wheels/
-*.egg-info
+*.py[cod]
+*$py.class
+.venv/
+venv/
+ENV/
 
-# Virtual environments
-.venv
+# Node modules (React/Frontend)
+node_modules/
+/frontend/build
+/frontend/dist
+
+# Environment variables & Secrets (CRITICAL)
 .env
+.env.local
+.env.*.local
+*.json.local
+
+# IDEs and system files
+.vscode/
+.idea/
+.DS_Store
