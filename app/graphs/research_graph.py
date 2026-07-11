@@ -1,6 +1,21 @@
 from typing import TypedDict, List, Dict, Any, Annotated
 from langgraph.graph import StateGraph, END
 import operator
+import os
+from langchain_tavily import TavilySearch
+from langchain_groq import ChatGroq
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.output_parsers import StrOutputParser
+
+# --- Initializations ---
+llm = ChatGroq(model='qwen/qwen3-32b', temperature=0)
+
+# Initialize the Tavily Search Tool
+tavily_search = TavilySearch(
+    max_results=3,      # Limits the number of results per sub-question to save tokens
+    topic="general",    # Category of the search
+    search_depth="basic" # Depth of the search
+)
 
 # --- 1. Define the State ---
 # This is the shared memory object passed between every node.
@@ -28,32 +43,70 @@ def intake_node(state: ResearchState) -> Dict:
     return {"sub_questions": [], "sources": [], "draft": "", "is_verified": False, "error": ""}
 
 def plan_node(state: ResearchState) -> Dict:
-    """Breaks the main topic into sub-questions."""
+    """Uses the LLM to break the main topic into sub-questions."""
     print(f"[{state['run_id']}] PLANNER: Decomposing topic.")
-    # Mock behavior: LLM would normally generate these
-    mock_questions = [
-        f"What is the history of {state['topic']}?",
-        f"What are the current commercial applications of {state['topic']}?"
-    ]
-    return {"sub_questions": mock_questions}
+
+    prompt = ChatPromptTemplate.from_messages([
+        ("system", "You are a research planner. Break the user's topic down into 3 targeted search queries. Return ONLY the queries separated by newlines."),
+        ("user", "Topic: {topic}\nInstructions: {instructions}")
+    ])
+
+    chain = prompt | llm | StrOutputParser()
+    result = chain.invoke({"topic": state["topic"], "instructions": state["instructions"]})
+
+    # Split the response by newline to create our list of sub-questions
+    questions = [q.strip() for q in result.split('\n') if q.strip()]
+
+    return {"sub_questions": questions}
 
 def research_node(state: ResearchState) -> Dict:
-    """Simulates parallel web research for the sub-questions."""
+    """Uses Tavily to search the web for each sub-question."""
     print(f"[{state['run_id']}] RESEARCHER: Gathering sources for {len(state['sub_questions'])} questions.")
     
-    # Mock behavior: Web scraper would fetch this data
-    mock_sources = [
-        {"url": "https://example.com/1", "title": "Overview", "snippet": "Data about the topic."},
-        {"url": "https://example.com/2", "title": "Market Analysis", "snippet": "Commercial viability stats."}
-    ]
+    all_sources = []
+    for question in state["sub_questions"]:
+        print(f"[{state['run_id']}] Searching for: {question}")
+
+        try:
+            results = tavily_search.invoke({"query": question})
+            
+            # Extract the raw data returned by Tavily
+            if isinstance(results, list):
+                for res in results:
+                    all_sources.append({
+                        "url": res.get("url", ""),
+                        "title": res.get("title", ""),
+                        "content": res.get("content", "")
+                    })
+        except Exception as e:
+            print(f"[{state['run_id']}] Error during Tavily search: {e}")
+            state["error"] += f"Error during search for '{question}': {e}\n"
+    
     # Because we used Annotated[..., operator.add] in the state, this will append to the list
-    return {"sources": mock_sources}
+    return {"sources": all_sources}
 
 def synthesize_node(state: ResearchState) -> Dict:
-    """Drafts the initial report from the gathered sources."""
+    """Uses an LLM to draft the report based on gathered sources."""
     print(f"[{state['run_id']}] SYNTHESIZER: Writing draft using {len(state['sources'])} sources.")
-    mock_draft = f"# Draft Report: {state['topic']}\n\nBased on {len(state['sources'])} sources, this is the initial draft."
-    return {"draft": mock_draft}
+
+    # Format sources into a readable context block for the LLM
+    context = ""
+    for i, src in enumerate(state['sources']):
+        context += f"Source {i+1}: {src['title']} ({src['url']})\n{src['content']}\n\n"
+        
+    prompt = ChatPromptTemplate.from_messages([
+        ("system", "You are an expert researcher. Use the provided sources to write a detailed, structured report in Markdown. Include inline citations to the sources where appropriate (e.g., [1], [2])."),
+        ("user", "Topic: {topic}\nInstructions: {instructions}\n\nSources:\n{context}")
+    ])
+
+    chain = prompt | llm | StrOutputParser()
+    draft = chain.invoke({
+        "topic": state["topic"],
+        "instructions": state["instructions"],
+        "context": context
+    })
+
+    return {"draft": draft}
 
 def verify_node(state: ResearchState) -> Dict:
     """Checks the draft for hallucinations or unsupported claims."""
@@ -63,10 +116,12 @@ def verify_node(state: ResearchState) -> Dict:
     return {"is_verified": is_good}
 
 def render_node(state: ResearchState) -> Dict:
-    """Finalizes the text content for PDF generation."""
-    print(f"[{state['run_id']}] RENDERER: Finalizing report structure.")
-    final_text = state["draft"] + "\n\n## Conclusion\nEverything looks verified."
-    return {"final_report": final_text}
+    """Prepares the drafted Markdown for HTML/PDF rendering later."""
+    print(f"[{state['run_id']}] RENDERER: Storing final markdown report.")
+
+    # Since we are using WeasyPrint later, we will eventually inject an HTML conversion step here.
+
+    return {"final_report": state["draft"]}
 
 # --- 3. Build the Graph ---
 

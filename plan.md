@@ -114,7 +114,7 @@ Build a website where a user submits a research request, the system runs a multi
 - Backend: FastAPI.
 - Orchestration: LangGraph.
 - Schemas: Pydantic v2.
-- Database: PostgreSQL for runs, report metadata, and expiration tracking.
+- Database: SQLite for runs, report metadata, and expiration tracking.
 - Background jobs: FastAPI background tasks for the first prototype.
 - Template rendering: Jinja2 for HTML report templates.
 - PDF generation: HTML-to-PDF with WeasyPrint as the default choice.
