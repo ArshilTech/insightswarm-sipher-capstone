@@ -98,7 +98,13 @@ def synthesize_node(state: ResearchState) -> Dict:
         context += f"Source {i+1}: {src['title']} ({src['url']})\n{src['content']}\n\n"
         
     prompt = ChatPromptTemplate.from_messages([
-        ("system", "You are an expert researcher. Use the provided sources to write a detailed, structured report in Markdown. Include inline citations to the sources where appropriate (e.g., [1], [2])."),
+        ("system", r"""You are an expert researcher. Use the provided sources to write a detailed, structured report in Markdown. 
+        Include inline citations to the sources where appropriate (e.g., [1], [2]).
+        
+        CRITICAL INSTRUCTIONS:
+        1. NO CONVERSATIONAL FILLER: Output ONLY the final Markdown report. Do not include any internal thinking, reasoning, or introductory phrases (e.g., "Okay, the user wants me to...", "Here is the report..."). Start directly with the title (#).
+        2. NO LATEX: Do not use LaTeX formatting (such as $ or $$ delimiters) for math or physics equations. WeasyPrint cannot render it. You MUST use plain text Unicode characters instead (e.g., write |ψ⟩ = α|0⟩ + β|1⟩ instead of $\psi\rangle = \alpha|0\rangle + \beta|1\rangle$).
+        """),
         ("user", "Topic: {topic}\nInstructions: {instructions}\n\nSources:\n{context}")
     ])
 
@@ -141,8 +147,6 @@ def verify_node(state: ResearchState) -> Dict:
 def render_node(state: ResearchState) -> Dict:
     """Prepares the drafted Markdown for HTML/PDF rendering later."""
     print(f"[{state['run_id']}] RENDERER: Storing final markdown report.")
-
-    # Since we are using WeasyPrint later, we will eventually inject an HTML conversion step here.
 
     return {"final_report": state["draft"]}
 

@@ -16,6 +16,7 @@ from fastapi.responses import FileResponse
 from sqlalchemy.orm import selectinload
 from sqlalchemy import select
 import os
+import re
 
 router = APIRouter()
 
@@ -30,6 +31,11 @@ async def run_research_background(initial_state: ResearchState):
             final_state: dict[str, Any] = await research_graph.ainvoke(initial_state)
             
             final_markdown = final_state.get("final_report", "")
+
+            # Remove the think block and all its contents
+            final_markdown = re.sub(r"<think>.*?</think>", "", final_markdown, flags=re.DOTALL).strip()
+            final_markdown = clean_latex(final_markdown)
+
             topic = final_state.get("topic", "research_report")
             pdf_path = None
             
@@ -61,14 +67,6 @@ async def run_research_background(initial_state: ResearchState):
                 except Exception as pdf_error:
                     print(f"Background task: PDF generation failed: {pdf_error}")
                     # Continue without PDF, report still has markdown content
-
-            report_file = ReportFile(
-                report_id=new_report.id,
-                file_path=pdf_path,
-                filename=f"{initial_state['run_id']}.pdf",
-                mime_type="application/pdf"
-            )
-            session.add(report_file)
             
             # Update the database with the final state
             run = await session.get(ResearchRun, initial_state['run_id'])
@@ -86,6 +84,19 @@ async def run_research_background(initial_state: ResearchState):
                 run.progress = 0
                 run.error_message = str(e)
                 await session.commit()
+
+def clean_latex(text: str) -> str:
+    # 1. Remove display math delimiters ($$) and inline math delimiters ($)
+    text = text.replace("$$", "").replace("$", "")
+    
+    # 2. Clean up Dirac bra-ket notation (e.g., |\psi\rangle -> |psi>)
+    text = re.sub(r'\\rangle', '>', text)
+    text = re.sub(r'\\langle', '<', text)
+    
+    # 3. Strip the leading backslash from LaTeX words (e.g., \alpha -> alpha)
+    text = re.sub(r'\\([a-zA-Z]+)', r'\1', text)
+    
+    return text.strip()
 
 # --- API Endpoint to Start Research ---
 
@@ -180,7 +191,7 @@ async def download_report_pdf(
     # Fetch the report and its associated file
     stmt = select(ReportFile).join(Report).where(Report.run_id == run_id)
     result = await session.execute(stmt)
-    report_file = result.scalar_one_or_none()
+    report_file = result.scalars().first()
 
     if not report_file:
         raise HTTPException(status_code=404, detail="PDF not generated yet or not found.")
