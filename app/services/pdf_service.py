@@ -1,6 +1,9 @@
 import os
 import markdown
 from weasyprint import HTML
+from dotenv import load_dotenv
+
+load_dotenv()
 
 def generate_pdf_report(markdown_content: str, run_id: str) -> str:
     """Converts Markdown text to a formatted PDF using WeasyPrint."""
@@ -48,11 +51,12 @@ def generate_pdf_report(markdown_content: str, run_id: str) -> str:
     </html>
     """
     
-    # Ensure the storage directory exists
-    os.makedirs("reports", exist_ok=True)
+    # Get report directory from environment or use default
+    report_dir = os.getenv("REPORT_DIR", "reports")
+    os.makedirs(report_dir, exist_ok=True)
     
     # Define the output path
-    file_path = f"reports/{run_id}.pdf"
+    file_path = os.path.join(report_dir, f"{run_id}.pdf")
     
     # Generate and save the PDF
     HTML(string=html_template).write_pdf(file_path)

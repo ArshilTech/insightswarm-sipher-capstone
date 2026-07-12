@@ -6,15 +6,18 @@ from langchain_tavily import TavilySearch
 from langchain_groq import ChatGroq
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
+from dotenv import load_dotenv
+load_dotenv()
 
 # --- Initializations ---
-llm = ChatGroq(model='qwen/qwen3-32b', temperature=0)
+llm_model = os.getenv("LLM_MODEL", "qwen/qwen3-32b")
+llm = ChatGroq(model=llm_model, temperature=0)
 
 # Initialize the Tavily Search Tool
 tavily_search = TavilySearch(
-    max_results=3,      # Limits the number of results per sub-question to save tokens
-    topic="general",    # Category of the search
-    search_depth="basic" # Depth of the search
+    max_results=int(os.getenv("TAVILY_MAX_RESULTS", "3")),
+    topic=os.getenv("TAVILY_TOPIC", "general"),
+    search_depth=os.getenv("TAVILY_SEARCH_DEPTH", "basic")
 )
 
 # --- 1. Define the State ---
@@ -95,7 +98,13 @@ def synthesize_node(state: ResearchState) -> Dict:
         context += f"Source {i+1}: {src['title']} ({src['url']})\n{src['content']}\n\n"
         
     prompt = ChatPromptTemplate.from_messages([
-        ("system", "You are an expert researcher. Use the provided sources to write a detailed, structured report in Markdown. Include inline citations to the sources where appropriate (e.g., [1], [2])."),
+        ("system", r"""You are an expert researcher. Use the provided sources to write a detailed, structured report in Markdown. 
+        Include inline citations to the sources where appropriate (e.g., [1], [2]).
+        
+        CRITICAL INSTRUCTIONS:
+        1. NO CONVERSATIONAL FILLER: Output ONLY the final Markdown report. Do not include any internal thinking, reasoning, or introductory phrases (e.g., "Okay, the user wants me to...", "Here is the report..."). Start directly with the title (#).
+        2. NO LATEX: Do not use LaTeX formatting (such as $ or $$ delimiters) for math or physics equations. WeasyPrint cannot render it. You MUST use plain text Unicode characters instead (e.g., write |ψ⟩ = α|0⟩ + β|1⟩ instead of $\psi\rangle = \alpha|0\rangle + \beta|1\rangle$).
+        """),
         ("user", "Topic: {topic}\nInstructions: {instructions}\n\nSources:\n{context}")
     ])
 
@@ -111,15 +120,33 @@ def synthesize_node(state: ResearchState) -> Dict:
 def verify_node(state: ResearchState) -> Dict:
     """Checks the draft for hallucinations or unsupported claims."""
     print(f"[{state['run_id']}] VERIFIER: Checking factual consistency.")
-    # Mock behavior: LLM would check draft against sources
-    is_good = True 
+    
+    if not state.get("sources"):
+        print(f"[{state['run_id']}] VERIFIER: No sources available, marking as verified.")
+        return {"is_verified": True}
+    
+    # Format sources for the LLM to reference
+    source_titles = [src.get("title", "") for src in state["sources"]]
+    sources_str = "\n".join(source_titles)
+    
+    prompt = ChatPromptTemplate.from_messages([
+        ("system", "You are a fact-checker. Review the draft against the provided sources and respond with ONLY 'VERIFIED' if the claims are supported, or 'NEEDS_REVISION' if you find unsupported claims or hallucinations."),
+        ("user", "Draft:\n{draft}\n\nSource Titles:\n{sources}")
+    ])
+    
+    chain = prompt | llm | StrOutputParser()
+    result = chain.invoke({
+        "draft": state["draft"],
+        "sources": sources_str
+    }).strip().upper()
+    
+    is_good = "VERIFIED" in result
+    print(f"[{state['run_id']}] VERIFIER: Result = {result} (is_verified={is_good})")
     return {"is_verified": is_good}
 
 def render_node(state: ResearchState) -> Dict:
     """Prepares the drafted Markdown for HTML/PDF rendering later."""
     print(f"[{state['run_id']}] RENDERER: Storing final markdown report.")
-
-    # Since we are using WeasyPrint later, we will eventually inject an HTML conversion step here.
 
     return {"final_report": state["draft"]}
 

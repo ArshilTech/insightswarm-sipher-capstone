@@ -1,7 +1,11 @@
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
 from sqlalchemy.orm import DeclarativeBase
+import os
+from dotenv import load_dotenv
 
-DATABASE_URL = "sqlite+aiosqlite:///research_app.db"
+load_dotenv()
+
+DATABASE_URL = os.getenv("DATABASE_URL", "sqlite+aiosqlite:///research_app.db")
 
 class Base(DeclarativeBase):
     pass
