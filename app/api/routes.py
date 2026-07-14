@@ -40,10 +40,14 @@ async def run_research_background(initial_state: ResearchState):
             pdf_path = None
             
             # Create the Report record in the database
+            summary_text = ""
+            if final_markdown:
+                summary_text = final_markdown[:500] + ("..." if len(final_markdown) > 500 else "")
+
             new_report = Report(
                 run_id=initial_state['run_id'],
                 title=f"Research Report on {topic}",
-                summary=final_markdown[:500] + "..." if final_markdown else "",  # Simple Preview of the report
+                summary=summary_text,
                 content_json={"raw_markdown": final_markdown}
             )
 
