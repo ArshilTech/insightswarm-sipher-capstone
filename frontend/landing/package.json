@@ -1,0 +1,13 @@
+{
+  "name": "insightswarm-landing",
+  "private": true,
+  "version": "1.0.0",
+  "scripts": {
+    "dev": "vite --port 3001",
+    "build": "vite build",
+    "preview": "vite preview --port 3001"
+  },
+  "devDependencies": {
+    "vite": "^8.1.1"
+  }
+}
