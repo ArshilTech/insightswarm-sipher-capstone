@@ -4,9 +4,10 @@ from app.api.routes import router
 from app.api.dependencies import create_db_and_tables
 from contextlib import asynccontextmanager
 from app.db.database import engine
+from fastapi.middleware.cors import CORSMiddleware
 from app.core import setup_logging, get_logger
 
-# 1. Setup logging before app creation
+# Setup logging before app creation
 setup_logging()
 logger = get_logger(__name__)
 
@@ -20,6 +21,13 @@ async def lifespan(app : FastAPI):
     await engine.dispose()  # Dispose of the engine on shutdown
 
 app = FastAPI(title="LangGraph Research API", lifespan=lifespan)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # HTTP middleware for request logging
 @app.middleware("http")
