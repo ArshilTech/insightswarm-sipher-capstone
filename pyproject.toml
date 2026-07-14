@@ -19,6 +19,7 @@ dependencies = [
     "pydantic>=2.13.4",
     "python-dotenv>=1.2.2",
     "sqlalchemy>=2.0.51",
+    "streamlit>=1.59.2",
     "tavily-python>=0.7.26",
     "uvicorn[standard]>=0.51.0",
     "weasyprint>=69.0",
