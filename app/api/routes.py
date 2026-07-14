@@ -17,17 +17,20 @@ from sqlalchemy.orm import selectinload
 from sqlalchemy import select
 import os
 import re
+from app.core import get_logger, get_run_logger
 
 router = APIRouter()
+logger = get_logger(__name__)
 
 # --- Background Task Function ---
 # We use a separate database session maker here because the request-scoped 
 # session closes before the background task finishes.
 
 async def run_research_background(initial_state: ResearchState):
+    run_logger = get_run_logger(__name__, initial_state['run_id'])
     async with async_session_maker() as session:
         try:
-            print(f"Background task: Starting graph execution for run: {initial_state['run_id']}")
+            run_logger.info("Background task: Starting graph execution")
             final_state: dict[str, Any] = await research_graph.ainvoke(initial_state)
             
             final_markdown = final_state.get("final_report", "")
@@ -54,7 +57,7 @@ async def run_research_background(initial_state: ResearchState):
             if final_markdown:
                 try:
                     pdf_path = generate_pdf_report(final_markdown, initial_state['run_id'])
-                    print(f"Background task: PDF report generated at {pdf_path}")
+                    run_logger.info(f"Background task: PDF report generated at {pdf_path}")
                     
                     # Create the ReportFile record to link the PDF to the report
                     report_file = ReportFile(
@@ -65,7 +68,7 @@ async def run_research_background(initial_state: ResearchState):
                     )
                     session.add(report_file)
                 except Exception as pdf_error:
-                    print(f"Background task: PDF generation failed: {pdf_error}")
+                    run_logger.error(f"Background task: PDF generation failed: {pdf_error}", exc_info=True)
                     # Continue without PDF, report still has markdown content
             
             # Update the database with the final state
@@ -74,10 +77,10 @@ async def run_research_background(initial_state: ResearchState):
                 run.status = "completed"
                 run.progress = 100
                 await session.commit()
-                print(f"Run {initial_state['run_id']} completely finalized with PDF.")
+                run_logger.info("Background task: Run completely finalized with PDF.")
 
         except Exception as e:
-            print(f"Background task: Graph execution error: {e}")
+            run_logger.error(f"Background task: Graph execution error: {e}", exc_info=True)
             run = await session.get(ResearchRun, initial_state['run_id'])
             if run:
                 run.status = "failed"
@@ -121,7 +124,7 @@ async def start_research(
         await session.refresh(new_run) # Refresh to get the generated ID and timestamps
     except Exception as e:
         await session.rollback()
-        print(f"Database error: {e}") # For local debugging
+        logger.error(f"Database error: {e}", exc_info=True) # For local debugging
         raise HTTPException(status_code=500, detail="Failed to save research run.")
     
     # 3. Prepare the initial state for LangGraph

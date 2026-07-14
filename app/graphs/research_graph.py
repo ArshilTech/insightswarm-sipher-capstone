@@ -7,6 +7,8 @@ from langchain_groq import ChatGroq
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 from dotenv import load_dotenv
+from app.core import get_run_logger
+
 load_dotenv()
 
 # --- Initializations ---
@@ -41,13 +43,15 @@ class ResearchState(TypedDict):
 
 def intake_node(state: ResearchState) -> Dict:
     """Validates and initializes the research request."""
-    print(f"[{state['run_id']}] INTAKE: Starting research on: {state['topic']}")
+    log = get_run_logger(__name__, state['run_id'])
+    log.info(f"INTAKE: Starting research on: {state['topic']}")
     # In a real app, you might fetch initial context here.
     return {"sub_questions": [], "sources": [], "draft": "", "is_verified": False, "error": ""}
 
 def plan_node(state: ResearchState) -> Dict:
     """Uses the LLM to break the main topic into sub-questions."""
-    print(f"[{state['run_id']}] PLANNER: Decomposing topic.")
+    log = get_run_logger(__name__, state['run_id'])
+    log.info("PLANNER: Decomposing topic.")
 
     prompt = ChatPromptTemplate.from_messages([
         ("system", "You are a research planner. Break the user's topic down into 3 targeted search queries. Return ONLY the queries separated by newlines."),
@@ -64,11 +68,12 @@ def plan_node(state: ResearchState) -> Dict:
 
 def research_node(state: ResearchState) -> Dict:
     """Uses Tavily to search the web for each sub-question."""
-    print(f"[{state['run_id']}] RESEARCHER: Gathering sources for {len(state['sub_questions'])} questions.")
+    log = get_run_logger(__name__, state['run_id'])
+    log.info(f"RESEARCHER: Gathering sources for {len(state['sub_questions'])} questions.")
     
     all_sources = []
     for question in state["sub_questions"]:
-        print(f"[{state['run_id']}] Searching for: {question}")
+        log.info(f"Searching for: {question}")
 
         try:
             results = tavily_search.invoke({"query": question})
@@ -82,7 +87,7 @@ def research_node(state: ResearchState) -> Dict:
                         "content": res.get("content", "")
                     })
         except Exception as e:
-            print(f"[{state['run_id']}] Error during Tavily search: {e}")
+            log.error(f"Error during Tavily search: {e}", exc_info=True)
             state["error"] += f"Error during search for '{question}': {e}\n"
     
     # Because we used Annotated[..., operator.add] in the state, this will append to the list
@@ -90,7 +95,8 @@ def research_node(state: ResearchState) -> Dict:
 
 def synthesize_node(state: ResearchState) -> Dict:
     """Uses an LLM to draft the report based on gathered sources."""
-    print(f"[{state['run_id']}] SYNTHESIZER: Writing draft using {len(state['sources'])} sources.")
+    log = get_run_logger(__name__, state['run_id'])
+    log.info(f"SYNTHESIZER: Writing draft using {len(state['sources'])} sources.")
 
     # Format sources into a readable context block for the LLM
     context = ""
@@ -119,10 +125,11 @@ def synthesize_node(state: ResearchState) -> Dict:
 
 def verify_node(state: ResearchState) -> Dict:
     """Checks the draft for hallucinations or unsupported claims."""
-    print(f"[{state['run_id']}] VERIFIER: Checking factual consistency.")
+    log = get_run_logger(__name__, state['run_id'])
+    log.info("VERIFIER: Checking factual consistency.")
     
     if not state.get("sources"):
-        print(f"[{state['run_id']}] VERIFIER: No sources available, marking as verified.")
+        log.info("VERIFIER: No sources available, marking as verified.")
         return {"is_verified": True}
     
     # Format sources for the LLM to reference
@@ -141,12 +148,13 @@ def verify_node(state: ResearchState) -> Dict:
     }).strip().upper()
     
     is_good = "VERIFIED" in result
-    print(f"[{state['run_id']}] VERIFIER: Result = {result} (is_verified={is_good})")
+    log.info(f"VERIFIER: Result = {result} (is_verified={is_good})")
     return {"is_verified": is_good}
 
 def render_node(state: ResearchState) -> Dict:
     """Prepares the drafted Markdown for HTML/PDF rendering later."""
-    print(f"[{state['run_id']}] RENDERER: Storing final markdown report.")
+    log = get_run_logger(__name__, state['run_id'])
+    log.info("RENDERER: Storing final markdown report.")
 
     return {"final_report": state["draft"]}
 
@@ -172,11 +180,12 @@ def build_research_graph():
 
     # Add a conditional edge: If verification fails, we could route back to researcher/synthesizer
     def check_verification(state: ResearchState):
+        log = get_run_logger(__name__, state['run_id'])
         if state.get("is_verified", False):
             return "renderer"
         else:
             # If it failed, send it back to the synthesizer to fix
-            print(f"[{state['run_id']}] VERIFIER FAILED: Routing back to synthesizer.")
+            log.warning("VERIFIER FAILED: Routing back to synthesizer.")
             return "synthesizer"
 
     builder.add_conditional_edges("verifier", check_verification)
