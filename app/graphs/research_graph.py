@@ -1,6 +1,7 @@
 from typing import TypedDict, List, Dict, Any, Annotated
 from langgraph.graph import StateGraph, END
 import operator
+from app.core import get_run_logger
 
 # --- 1. Define the State ---
 # This is the shared memory object passed between every node.
@@ -23,13 +24,15 @@ class ResearchState(TypedDict):
 
 def intake_node(state: ResearchState) -> Dict:
     """Validates and initializes the research request."""
-    print(f"[{state['run_id']}] INTAKE: Starting research on: {state['topic']}")
+    log = get_run_logger(__name__, state['run_id'])
+    log.info(f"INTAKE: Starting research on: {state['topic']}")
     # In a real app, you might fetch initial context here.
     return {"sub_questions": [], "sources": [], "draft": "", "is_verified": False, "error": ""}
 
 def plan_node(state: ResearchState) -> Dict:
     """Breaks the main topic into sub-questions."""
-    print(f"[{state['run_id']}] PLANNER: Decomposing topic.")
+    log = get_run_logger(__name__, state['run_id'])
+    log.info("PLANNER: Decomposing topic.")
     # Mock behavior: LLM would normally generate these
     mock_questions = [
         f"What is the history of {state['topic']}?",
@@ -39,32 +42,41 @@ def plan_node(state: ResearchState) -> Dict:
 
 def research_node(state: ResearchState) -> Dict:
     """Simulates parallel web research for the sub-questions."""
-    print(f"[{state['run_id']}] RESEARCHER: Gathering sources for {len(state['sub_questions'])} questions.")
+    log = get_run_logger(__name__, state['run_id'])
+    log.info(f"RESEARCHER: Gathering sources for {len(state['sub_questions'])} questions.")
     
-    # Mock behavior: Web scraper would fetch this data
-    mock_sources = [
-        {"url": "https://example.com/1", "title": "Overview", "snippet": "Data about the topic."},
-        {"url": "https://example.com/2", "title": "Market Analysis", "snippet": "Commercial viability stats."}
-    ]
+    try:
+        # Mock behavior: Web scraper would fetch this data
+        mock_sources = [
+            {"url": "https://example.com/1", "title": "Overview", "snippet": "Data about the topic."},
+            {"url": "https://example.com/2", "title": "Market Analysis", "snippet": "Commercial viability stats."}
+        ]
+    except Exception as e:
+        log.error(f"Tavily search exception: {e}", exc_info=True)
+        raise e
+        
     # Because we used Annotated[..., operator.add] in the state, this will append to the list
     return {"sources": mock_sources}
 
 def synthesize_node(state: ResearchState) -> Dict:
     """Drafts the initial report from the gathered sources."""
-    print(f"[{state['run_id']}] SYNTHESIZER: Writing draft using {len(state['sources'])} sources.")
+    log = get_run_logger(__name__, state['run_id'])
+    log.info(f"SYNTHESIZER: Writing draft using {len(state['sources'])} sources.")
     mock_draft = f"# Draft Report: {state['topic']}\n\nBased on {len(state['sources'])} sources, this is the initial draft."
     return {"draft": mock_draft}
 
 def verify_node(state: ResearchState) -> Dict:
     """Checks the draft for hallucinations or unsupported claims."""
-    print(f"[{state['run_id']}] VERIFIER: Checking factual consistency.")
+    log = get_run_logger(__name__, state['run_id'])
+    log.info("VERIFIER: Checking factual consistency.")
     # Mock behavior: LLM would check draft against sources
     is_good = True 
     return {"is_verified": is_good}
 
 def render_node(state: ResearchState) -> Dict:
     """Finalizes the text content for PDF generation."""
-    print(f"[{state['run_id']}] RENDERER: Finalizing report structure.")
+    log = get_run_logger(__name__, state['run_id'])
+    log.info("RENDERER: Finalizing report structure.")
     final_text = state["draft"] + "\n\n## Conclusion\nEverything looks verified."
     return {"final_report": final_text}
 
@@ -90,11 +102,12 @@ def build_research_graph():
 
     # Add a conditional edge: If verification fails, we could route back to researcher/synthesizer
     def check_verification(state: ResearchState):
+        log = get_run_logger(__name__, state['run_id'])
         if state.get("is_verified", False):
             return "renderer"
         else:
             # If it failed, send it back to the synthesizer to fix
-            print(f"[{state['run_id']}] VERIFIER FAILED: Routing back to synthesizer.")
+            log.warning("VERIFIER FAILED: Routing back to synthesizer.")
             return "synthesizer"
 
     builder.add_conditional_edges("verifier", check_verification)
@@ -106,4 +119,4 @@ def build_research_graph():
     return builder.compile()
 
 # Instantiate the graph so it can be imported elsewhere
-research_graph = build_research_graph()
+research_graph = build_research_graph()

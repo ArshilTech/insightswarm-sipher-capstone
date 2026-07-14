@@ -7,8 +7,10 @@ from app.models.schemas import ResearchRequest, ResearchRunResponse
 from app.models.models import ResearchRun
 
 from app.graphs.research_graph import research_graph, ResearchState
+from app.core import get_logger, get_run_logger
 
 router = APIRouter()
+logger = get_logger(__name__)
 
 @router.post("/research", response_model=ResearchRunResponse, status_code=201)
 async def start_research(
@@ -30,7 +32,7 @@ async def start_research(
         await session.refresh(new_run) # Refresh to get the generated ID and timestamps
     except Exception as e:
         await session.rollback()
-        print(f"Database error: {e}") # For local debugging
+        logger.error(f"Database error: {e}", exc_info=True) # For local debugging
         raise HTTPException(status_code=500, detail="Failed to save research run.")
     
     # 3. Prepare the initial state for LangGraph
@@ -48,11 +50,12 @@ async def start_research(
     }
 
     # 4. Execute the research graph asynchronously
+    run_logger = get_run_logger(__name__, str(new_run.id))
     try:
-        print(f"Starting graph execution for run: {new_run.id}")
+        run_logger.info("Starting graph execution")
         # Using ainvoke for asynchronous execution
         final_state: dict[str, Any] = await research_graph.ainvoke(initial_state)
-        print(f"Graph execution completed. Final state report length: {len(final_state['final_report'])}")
+        run_logger.info(f"Graph execution completed. Final state report length: {len(final_state['final_report'])}")
         
         # Update success status here as well
         new_run.status = "completed"
@@ -60,7 +63,7 @@ async def start_research(
         await session.commit()
         
     except Exception as e:
-        print(f"Graph execution error: {e}")
+        run_logger.error(f"Graph execution error: {e}", exc_info=True)
         
         new_run.status = "failed"
         new_run.progress = 0
@@ -72,4 +75,4 @@ async def start_research(
         raise HTTPException(status_code=500, detail="Research graph execution failed.")
     
     # 5. Return the new research run details to the client
-    return new_run
+    return new_run
