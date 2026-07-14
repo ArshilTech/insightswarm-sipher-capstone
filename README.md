@@ -2,6 +2,10 @@
 
 Welcome to the central repository for **InsightSwarm**.
 
+## Project Plan
+
+The implementation tracker lives in [plan.md](plan.md). Section 1 lists the work that is already completed, and Section 2 lists the remaining work that still needs to be implemented.
+
 This project uses a collaborative Git workflow to keep the `main` branch stable and production-ready.
 
 ## 🚀 Team Git Workflow
