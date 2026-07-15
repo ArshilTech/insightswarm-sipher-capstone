@@ -142,7 +142,8 @@ async def start_research(
         "draft": "",
         "is_verified": False,
         "final_report": "",
-        "error": ""
+        "error": "",
+        "retry_count": 0
     }
 
     # 4. Schedule the background task to run the research graph
