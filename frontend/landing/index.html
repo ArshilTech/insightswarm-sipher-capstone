@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>InsightSwarm -> Multi-Agent Research Engine</title>
+    <meta name="description" content="InsightSwarm is an AI-powered multi-agent research engine that transforms queries into comprehensive academic and market research reports.">
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+    <div class="bg-blobs" aria-hidden="true">
+        <div class="blob blob-1"></div>
+        <div class="blob blob-2"></div>
+        <div class="blob blob-3"></div>
+    </div>
+
+    <div class="noise-overlay" aria-hidden="true"></div>
+
+    <main class="container">
+        <header class="hero">
+            <div class="logo-badge">
+                <span class="logo-icon">📖</span>
+            </div>
+            <h1 class="hero-title">InsightSwarm</h1>
+            <p class="hero-subtitle">Autonomous Multi-Agent Academic & Market Research Engine</p>
+            <p class="hero-description">
+                Transform your research queries into comprehensive, citation-backed reports
+                through automated planning, web intelligence, and multi-agent analysis.
+            </p>
+        </header>
+
+        <section class="cards-grid" id="cards">
+
+            <a href="#" class="card card-workspace" id="card-workspace" data-target="workspace">
+                <div class="card-glow card-glow-warm"></div>
+                <div class="card-content">
+                    <div class="card-icon-wrap">
+                        <svg class="card-icon" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <rect x="6" y="10" width="36" height="28" rx="4" stroke="currentColor" stroke-width="2.5"/>
+                            <path d="M6 18h36" stroke="currentColor" stroke-width="2.5"/>
+                            <circle cx="11" cy="14" r="1.5" fill="currentColor"/>
+                            <circle cx="16" cy="14" r="1.5" fill="currentColor"/>
+                            <circle cx="21" cy="14" r="1.5" fill="currentColor"/>
+                            <path d="M14 26l4 4 8-8" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </div>
+                    <div class="card-badge badge-live">
+                        <span class="badge-dot"></span>
+                        Production
+                    </div>
+                    <h2 class="card-title">Launch InsightSwarm Workspace</h2>
+                    <p class="card-description">
+                        Submit research topics, track progress in real-time, and download
+                        comprehensive PDF reports - your primary research interface.
+                    </p>
+                    <div class="card-cta">
+                        <span>Open Workspace</span>
+                        <svg class="cta-arrow" width="20" height="20" viewBox="0 0 20 20" fill="none">
+                            <path d="M4 10h12m0 0l-4-4m4 4l-4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </div>
+                </div>
+            </a>
+
+            <a href="#" class="card card-dashboard" id="card-dashboard" data-target="dashboard">
+                <div class="card-glow card-glow-cool"></div>
+                <div class="card-content">
+                    <div class="card-icon-wrap">
+                        <svg class="card-icon" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <rect x="6" y="6" width="36" height="36" rx="4" stroke="currentColor" stroke-width="2.5"/>
+                            <path d="M6 18h36" stroke="currentColor" stroke-width="2.5"/>
+                            <path d="M18 18v24" stroke="currentColor" stroke-width="2.5"/>
+                            <rect x="22" y="24" width="8" height="3" rx="1" fill="currentColor" opacity="0.6"/>
+                            <rect x="22" y="30" width="12" height="3" rx="1" fill="currentColor" opacity="0.4"/>
+                            <rect x="22" y="36" width="6" height="3" rx="1" fill="currentColor" opacity="0.25"/>
+                            <circle cx="12" cy="24" r="2" fill="currentColor" opacity="0.5"/>
+                            <circle cx="12" cy="30" r="2" fill="currentColor" opacity="0.5"/>
+                            <circle cx="12" cy="36" r="2" fill="currentColor" opacity="0.5"/>
+                            <circle cx="11" cy="12" r="1.5" fill="currentColor"/>
+                            <circle cx="16" cy="12" r="1.5" fill="currentColor"/>
+                        </svg>
+                    </div>
+                    <div class="card-badge badge-dev">
+                        <span class="badge-dot"></span>
+                        Developer
+                    </div>
+                    <h2 class="card-title">Open Developer Control Center</h2>
+                    <p class="card-description">
+                        Monitor system health, inspect research runs, view agent traces,
+                        and manage reports - built for developers and operators.
+                    </p>
+                    <div class="card-cta">
+                        <span>Open Dashboard</span>
+                        <svg class="cta-arrow" width="20" height="20" viewBox="0 0 20 20" fill="none">
+                            <path d="M4 10h12m0 0l-4-4m4 4l-4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </div>
+                </div>
+            </a>
+
+        </section>
+
+        <footer class="footer">
+            <p>© InsightSwarm &dash; Sipher Capstone Project</p>
+        </footer>
+    </main>
+
+    <script src="js/script.js"></script>
+</body>
+</html>
