@@ -1,10 +1,11 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import ResearchHeroAnimation from '../components/ResearchHeroAnimation';
 import { LoadingSpinner, SuccessCheckmark } from '../components/Feedback';
 
 const API_BASE = 'http://127.0.0.1:8000/api';
 
+const headingWords = ['Launch', 'Research'];
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -35,13 +36,36 @@ const glowVariants = {
   idle: {
     opacity: 1,
     y: 0,
-    boxShadow: '0 0 20px rgba(45, 212, 191, 0.05)',
+    boxShadow: '0 0 20px rgba(13, 148, 136, 0.06)',
   },
   focused: {
     opacity: 1,
     y: 0,
-    boxShadow: '0 0 60px rgba(45, 212, 191, 0.12)',
+    boxShadow: '0 0 60px rgba(13, 148, 136, 0.14)',
     transition: { duration: 0.6 },
+  },
+};
+
+const headingVariants = {
+  hidden: {},
+  visible: {
+    transition: {
+      staggerChildren: 0.16,
+    },
+  },
+};
+
+const letterVariants = {
+  hidden: { opacity: 0, y: 18 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      type: 'spring',
+      stiffness: 180,
+      damping: 18,
+      duration: 0.35,
+    },
   },
 };
 
@@ -103,13 +127,46 @@ export default function SubmitPage() {
     setCharCount(0);
   };
 
+  const [currentWordIndex, setCurrentWordIndex] = useState(0);
+  const [typedText, setTypedText] = useState('');
+
+  useEffect(() => {
+    const currentWord = headingWords[currentWordIndex];
+    const prefix = currentWordIndex === 0 ? '' : `${headingWords[0]} `;
+    const targetText = currentWordIndex === 0 ? currentWord : `${prefix}${currentWord}`;
+    const typingSpeed = 64;
+    const wordCompletePause = 420;
+    const fullPhrasePause = 520;
+    let timeout;
+
+    if (typedText !== targetText) {
+      timeout = setTimeout(
+        () => setTypedText(targetText.slice(0, typedText.length + 1)),
+        typingSpeed
+      );
+    } else if (currentWordIndex < headingWords.length - 1) {
+      timeout = setTimeout(() => {
+        setCurrentWordIndex((index) => index + 1);
+      }, wordCompletePause);
+    } else {
+      timeout = setTimeout(() => {
+        setCurrentWordIndex(0);
+        setTypedText('');
+      }, fullPhrasePause);
+    }
+
+    return () => clearTimeout(timeout);
+  }, [typedText, currentWordIndex]);
+
+  const currentDisplay = typedText;
+
   return (
-    <div className="relative min-h-screen flex items-center justify-center px-4 py-12 sm:py-16">
-      {/* Background elements */}
-      <div className="bg-blob bg-blob-1" />
-      <div className="bg-blob bg-blob-2" />
-      <div className="bg-blob bg-blob-3" />
-      <div className="noise-overlay" />
+    <div className="relative flex min-h-screen items-center justify-center overflow-hidden px-4 py-12 sm:py-16">
+      <div className="absolute inset-0" style={{ backgroundImage: 'radial-gradient(circle at top left, rgba(34, 211, 238, 0.18), transparent 36%), radial-gradient(circle at bottom right, rgba(13, 148, 136, 0.18), transparent 38%), linear-gradient(135deg, #eafcf9 0%, #e2f8f4 45%, #dcf3ee 100%)' }} />
+      <div className="absolute inset-0" style={{ backgroundImage: 'linear-gradient(120deg, rgba(255, 255, 255, 0.55), transparent 45%, rgba(13, 148, 136, 0.08))' }} />
+      <div className="absolute left-[-8%] top-[-10%] h-48 w-48 rounded-full bg-cyan-300/25 blur-3xl" />
+      <div className="absolute bottom-[-6%] right-[-4%] h-56 w-56 rounded-full bg-teal-500/20 blur-3xl" />
+      <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: "url('data:image/svg+xml,%3Csvg viewBox=\"0 0 256 256\" xmlns=\"http://www.w3.org/2000/svg\"%3E%3Cfilter id=\"n\"%3E%3CfeTurbulence type=\"fractalNoise\" baseFrequency=\"0.9\" numOctaves=\"4\" stitchTiles=\"stitch\"/%3E%3C/filter%3E%3Crect width=\"100%25\" height=\"100%25\" filter=\"url(%23n)\"/%3E%3C/svg%3E')" }} />
 
       <motion.div
         className="relative z-10 w-full max-w-2xl"
@@ -117,54 +174,58 @@ export default function SubmitPage() {
         initial="hidden"
         animate="visible"
       >
-        {/* Header section with animated hero */}
-        <motion.div variants={itemVariants} className="text-center mb-8">
+        <motion.div variants={itemVariants} className="mb-8 text-center">
           <div className="mb-4">
             <ResearchHeroAnimation />
           </div>
 
           <motion.h1
-            className="font-[family-name:var(--font-display)] text-3xl sm:text-4xl font-bold tracking-tight mb-3"
-            style={{ color: 'var(--color-text-primary)' }}
+            className="mb-3 font-display text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl"
+            variants={headingVariants}
+            initial="hidden"
+            animate="visible"
           >
-            Launch{' '}
-            <span
-              className="bg-clip-text text-transparent"
-              style={{
-                backgroundImage:
-                  'linear-gradient(135deg, var(--color-accent), var(--color-teal-300))',
-              }}
+            <motion.span
+              key={currentWordIndex}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.18, ease: 'easeOut' }}
+              className="inline-block"
             >
-              Research
-            </span>
+              {currentWordIndex === 1 ? (
+                <>
+                  <span>{currentDisplay.slice(0, 7)}</span>
+                  <span className="bg-linear-to-r from-teal-600 via-teal-500 to-cyan-400 bg-clip-text text-transparent">
+                    {currentDisplay.slice(7)}
+                  </span>
+                </>
+              ) : (
+                currentDisplay
+              )}
+            </motion.span>
           </motion.h1>
 
-          <motion.p
-            className="text-sm sm:text-base max-w-md mx-auto"
-            style={{ color: 'var(--color-text-secondary)' }}
-          >
+          <motion.p className="mx-auto max-w-md text-sm text-slate-700 sm:text-base">
             Feed your topic to the swarm. Our AI agents will research, synthesize,
             and deliver a comprehensive report.
           </motion.p>
         </motion.div>
 
-        {/* Main form card */}
         <AnimatePresence mode="wait">
           {!runId ? (
             <motion.div
               key="form"
               variants={glowVariants}
               animate={formFocused ? 'focused' : 'idle'}
-              className="clay-card p-6 sm:p-10"
+              className="relative overflow-hidden rounded-4xl border border-teal-600/20 bg-white/70 p-6 shadow-[0_30px_80px_-28px_rgba(13,148,136,0.35)] backdrop-blur-2xl sm:p-10"
               ref={formRef}
               initial={{ opacity: 0, y: 30 }}
               exit={{ opacity: 0, y: -20, scale: 0.97, transition: { duration: 0.3 } }}
             >
+              <div className="absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-teal-500/60 to-transparent" />
               <form onSubmit={handleSubmit} className="space-y-7">
-                {/* Topic field */}
                 <motion.div variants={itemVariants}>
-                  <label className="field-label" htmlFor="topic-input">
-                    <span className="label-icon">🎯</span>
+                  <label className="mb-2 block text-sm font-semibold uppercase tracking-[0.22em] text-teal-700/80" htmlFor="topic-input">
                     Research Topic
                   </label>
                   <input
@@ -175,34 +236,21 @@ export default function SubmitPage() {
                     onFocus={() => setFormFocused(true)}
                     onBlur={() => setFormFocused(false)}
                     placeholder="e.g., Impact of quantum computing on cryptography"
-                    className="clay-input"
+                    className="w-full rounded-2xl border border-teal-900/10 bg-white/80 px-4 py-3.5 text-[15px] text-slate-900 shadow-[inset_0_1px_0_rgba(255,255,255,0.95)] outline-none transition duration-300 placeholder:text-slate-400 focus:border-teal-500 focus:ring-4 focus:ring-teal-500/10"
                     disabled={loading}
                     autoComplete="off"
                   />
                 </motion.div>
 
-                {/* Instructions field */}
                 <motion.div variants={itemVariants}>
-                  <div className="flex items-center justify-between mb-2">
-                    <label className="field-label mb-0" htmlFor="instructions-input">
-                      <span className="label-icon">📝</span>
+                  <div className="mb-2 flex items-center justify-between">
+                    <label className="mb-0 block text-sm font-semibold uppercase tracking-[0.22em] text-teal-700/80" htmlFor="instructions-input">
                       Additional Instructions
-                      <span
-                        className="text-[0.65rem] font-normal normal-case tracking-normal ml-1"
-                        style={{ color: 'var(--color-text-muted)' }}
-                      >
+                      <span className="ml-1 text-[0.65rem] font-normal normal-case tracking-normal text-slate-500">
                         (optional)
                       </span>
                     </label>
-                    <span
-                      className="text-xs tabular-nums"
-                      style={{
-                        color:
-                          charCount > 500
-                            ? 'var(--color-error)'
-                            : 'var(--color-text-muted)',
-                      }}
-                    >
+                    <span className={`text-xs tabular-nums ${charCount > 500 ? 'text-rose-500' : 'text-slate-500'}`}>
                       {charCount}/500
                     </span>
                   </div>
@@ -213,7 +261,7 @@ export default function SubmitPage() {
                     onFocus={() => setFormFocused(true)}
                     onBlur={() => setFormFocused(false)}
                     placeholder="Focus on recent developments, include case studies, compare methodologies..."
-                    className="clay-input resize-none"
+                    className="w-full resize-none rounded-2xl border border-teal-900/10 bg-white/80 px-4 py-3.5 text-[15px] text-slate-900 shadow-[inset_0_1px_0_rgba(255,255,255,0.95)] outline-none transition duration-300 placeholder:text-slate-400 focus:border-teal-500 focus:ring-4 focus:ring-teal-500/10"
                     rows={4}
                     maxLength={500}
                     disabled={loading}
@@ -221,8 +269,6 @@ export default function SubmitPage() {
                   />
                 </motion.div>
 
-
-                {/* Error message */}
                 <AnimatePresence>
                   {error && (
                     <motion.div
@@ -230,28 +276,18 @@ export default function SubmitPage() {
                       animate={{ opacity: 1, height: 'auto', y: 0 }}
                       exit={{ opacity: 0, height: 0, y: -8 }}
                       transition={{ duration: 0.25 }}
-                      className="rounded-xl px-4 py-3 flex items-center gap-3"
-                      style={{
-                        background: 'var(--color-error-bg)',
-                        border: '1px solid rgba(248, 113, 113, 0.2)',
-                      }}
+                      className="flex items-center gap-3 rounded-2xl border border-rose-200 bg-rose-50/90 px-4 py-3"
                     >
                       <span className="text-base">⚠️</span>
-                      <span
-                        className="text-sm font-medium"
-                        style={{ color: 'var(--color-error)' }}
-                      >
-                        {error}
-                      </span>
+                      <span className="text-sm font-medium text-rose-600">{error}</span>
                     </motion.div>
                   )}
                 </AnimatePresence>
 
-                {/* Submit button */}
                 <motion.div variants={itemVariants}>
                   <motion.button
                     type="submit"
-                    className="clay-btn-primary w-full flex items-center justify-center gap-3"
+                    className="flex w-full items-center justify-center gap-3 rounded-2xl bg-linear-to-r from-teal-600 via-teal-500 to-cyan-400 px-6 py-3.5 font-semibold text-slate-900 shadow-[0_16px_35px_-12px_rgba(13,148,136,0.45)] transition duration-300 hover:-translate-y-0.5 hover:shadow-[0_20px_40px_-14px_rgba(13,148,136,0.55)] disabled:cursor-not-allowed disabled:opacity-60"
                     disabled={loading || !topic.trim()}
                     whileHover={!loading && topic.trim() ? { scale: 1.015 } : {}}
                     whileTap={!loading && topic.trim() ? { scale: 0.985 } : {}}
@@ -282,21 +318,15 @@ export default function SubmitPage() {
                   </motion.button>
                 </motion.div>
 
-                {/* Footer info */}
-                <motion.p
-                  variants={itemVariants}
-                  className="text-center text-xs"
-                  style={{ color: 'var(--color-text-muted)' }}
-                >
+                <motion.p variants={itemVariants} className="text-center text-xs text-slate-500">
                   Output will be generated as a PDF report
                 </motion.p>
               </form>
             </motion.div>
           ) : (
-            /* ═══ Success state ═══ */
             <motion.div
               key="success"
-              className="clay-card p-8 sm:p-10 text-center"
+              className="rounded-4xl border border-teal-600/20 bg-white/70 p-8 text-center shadow-[0_30px_80px_-28px_rgba(13,148,136,0.35)] backdrop-blur-2xl sm:p-10"
               initial={{ opacity: 0, y: 30, scale: 0.95 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               transition={{ type: 'spring', stiffness: 200, damping: 20 }}
@@ -305,163 +335,90 @@ export default function SubmitPage() {
                 <SuccessCheckmark />
               </div>
 
-              <h2
-                className="font-[family-name:var(--font-display)] text-xl sm:text-2xl font-bold mb-3"
-                style={{ color: 'var(--color-text-primary)' }}
-              >
+              <h2 className="mb-3 font-display text-xl font-bold text-slate-900 sm:text-2xl">
                 Research Initiated!
               </h2>
 
-              <p
-                className="text-sm mb-6"
-                style={{ color: 'var(--color-text-secondary)' }}
-              >
+              <p className="mb-6 text-sm text-slate-700">
                 Your research swarm is now gathering and analyzing data. Track
                 progress on the status page.
               </p>
 
-              {/* Run ID display */}
-              <div
-                className="rounded-xl px-5 py-4 mb-6 inline-block"
-                style={{
-                  background: 'var(--color-success-bg)',
-                  border: '1px solid rgba(74, 222, 128, 0.15)',
-                }}
-              >
-                <span
-                  className="text-xs uppercase tracking-widest font-semibold block mb-1"
-                  style={{ color: 'var(--color-text-muted)' }}
-                >
+              <div className="mb-6 inline-block rounded-2xl border border-emerald-200 bg-emerald-50/80 px-5 py-4">
+                <span className="mb-1 block text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">
                   Run ID
                 </span>
-                <code
-                  className="text-sm font-mono font-semibold"
-                  style={{ color: 'var(--color-success)' }}
-                >
-                  {runId}
-                </code>
+                <code className="text-sm font-mono font-semibold text-emerald-600">{runId}</code>
               </div>
 
-              {/* Topic summary */}
-              <div
-                className="rounded-xl px-5 py-4 mb-8 text-left"
-                style={{
-                  background: 'rgba(255,255,255,0.02)',
-                  border: '1px solid var(--color-border-subtle)',
-                }}
-              >
-                <div className="flex items-center gap-2 mb-2">
+              <div className="mb-8 rounded-2xl border border-teal-900/10 bg-white/70 px-5 py-4 text-left shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]">
+                <div className="mb-2 flex items-center gap-2">
                   <span className="text-sm">🎯</span>
-                  <span
-                    className="text-xs uppercase tracking-widest font-semibold"
-                    style={{ color: 'var(--color-text-muted)' }}
-                  >
+                  <span className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">
                     Topic
                   </span>
                 </div>
-                <p
-                  className="text-sm leading-relaxed"
-                  style={{ color: 'var(--color-text-primary)' }}
-                >
-                  {topic}
-                </p>
+                <p className="text-sm leading-relaxed text-slate-800">{topic}</p>
                 {instructions && (
                   <>
-                    <div className="flex items-center gap-2 mt-4 mb-2">
+                    <div className="mb-2 mt-4 flex items-center gap-2">
                       <span className="text-sm">📝</span>
-                      <span
-                        className="text-xs uppercase tracking-widest font-semibold"
-                        style={{ color: 'var(--color-text-muted)' }}
-                      >
+                      <span className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">
                         Instructions
                       </span>
                     </div>
-                    <p
-                      className="text-sm leading-relaxed"
-                      style={{ color: 'var(--color-text-secondary)' }}
-                    >
-                      {instructions}
-                    </p>
+                    <p className="text-sm leading-relaxed text-slate-600">{instructions}</p>
                   </>
                 )}
-                <div
-                  className="flex items-center gap-4 mt-4 pt-3"
-                  style={{ borderTop: '1px solid var(--color-border-subtle)' }}
-                >
+                <div className="mt-4 flex items-center gap-4 border-t border-teal-900/10 pt-3">
                   <div className="flex items-center gap-1.5">
                     <span className="text-xs">📄</span>
-                    <span
-                      className="text-xs font-medium"
-                      style={{ color: 'var(--color-accent)' }}
-                    >
-                      PDF Report
-                    </span>
+                    <span className="text-xs font-medium text-teal-600">PDF Report</span>
                   </div>
                 </div>
               </div>
 
-              {/* Action buttons */}
               <div className="flex gap-3">
                 <motion.button
-                  className="clay-btn-primary flex-1 flex items-center justify-center gap-2"
+                  className="flex-1 rounded-2xl bg-linear-to-r from-teal-600 via-teal-500 to-cyan-400 px-4 py-3 font-semibold text-slate-900 shadow-[0_16px_35px_-12px_rgba(13,148,136,0.45)] transition duration-300 hover:-translate-y-0.5 hover:shadow-[0_20px_40px_-14px_rgba(13,148,136,0.55)]"
                   whileHover={{ scale: 1.015 }}
                   whileTap={{ scale: 0.985 }}
-                  onClick={() => {
-
-                  }}
+                  onClick={() => {}}
                 >
-                  <svg
-                    width="18"
-                    height="18"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <circle cx="12" cy="12" r="10" />
-                    <polyline points="12,6 12,12 16,14" />
-                  </svg>
-                  Track Progress
+                  <div className="flex items-center justify-center gap-2">
+                    <svg
+                      width="18"
+                      height="18"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <circle cx="12" cy="12" r="10" />
+                      <polyline points="12,6 12,12 16,14" />
+                    </svg>
+                    <span>Track Progress</span>
+                  </div>
                 </motion.button>
 
                 <motion.button
                   type="button"
-                  className="depth-pill"
-                  style={{ flex: 'none', padding: '14px 20px' }}
+                  className="flex-none rounded-2xl border border-teal-600/20 bg-white/80 px-4 py-3 text-sm font-semibold text-teal-700 shadow-sm transition duration-300 hover:-translate-y-0.5"
                   onClick={handleReset}
                   whileHover={{ scale: 1.03 }}
                   whileTap={{ scale: 0.97 }}
                 >
-                  <span className="pill-icon">✨</span>
-                  <span className="pill-label">New</span>
+                  <span className="mr-2">✨</span>
+                  <span>New</span>
                 </motion.button>
               </div>
             </motion.div>
           )}
         </AnimatePresence>
 
-        {/* Bottom branding */}
-        <motion.div
-          variants={itemVariants}
-          className="text-center mt-8 flex items-center justify-center gap-2"
-        >
-          <div
-            className="w-1.5 h-1.5 rounded-full"
-            style={{ background: 'var(--color-accent)', opacity: 0.5 }}
-          />
-          <span
-            className="text-xs tracking-wider uppercase font-medium"
-            style={{ color: 'var(--color-text-muted)' }}
-          >
-            InsightSwarm
-          </span>
-          <div
-            className="w-1.5 h-1.5 rounded-full"
-            style={{ background: 'var(--color-accent)', opacity: 0.5 }}
-          />
-        </motion.div>
+        <motion.div variants={itemVariants} className="mt-8 flex items-center justify-center gap-2 text-center" />
       </motion.div>
     </div>
   );
