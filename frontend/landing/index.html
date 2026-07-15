@@ -3,112 +3,254 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>InsightSwarm -> Multi-Agent Research Engine</title>
+    <title>InsightSwarm — Multi-Agent Research Engine</title>
     <meta name="description" content="InsightSwarm is an AI-powered multi-agent research engine that transforms queries into comprehensive academic and market research reports.">
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
 
-    <div class="bg-blobs" aria-hidden="true">
-        <div class="blob blob-1"></div>
-        <div class="blob blob-2"></div>
-        <div class="blob blob-3"></div>
-    </div>
-
+    <canvas id="swarm-canvas" aria-hidden="true"></canvas>
+    <div class="bg-mesh" aria-hidden="true"></div>
     <div class="noise-overlay" aria-hidden="true"></div>
 
-    <main class="container">
-        <header class="hero">
-            <div class="logo-badge">
-                <span class="logo-icon">📖</span>
+    <div class="page">
+
+        <header class="topbar reveal">
+            <div class="brand">
+                
+                    <span class="brand-mark" aria-hidden="true">
+    <img src="favicon.svg" alt="" width="19" height="19">
+
+                </span>
+                <span class="brand-name">InsightSwarm</span>
             </div>
-            <h1 class="hero-title">InsightSwarm</h1>
-            <p class="hero-subtitle">Autonomous Multi-Agent Academic & Market Research Engine</p>
-            <p class="hero-description">
-                Transform your research queries into comprehensive, citation-backed reports
-                through automated planning, web intelligence, and multi-agent analysis.
-            </p>
+            <div class="status-pill">
+                <span class="status-dot"></span>
+                <span class="status-text">System Operational</span>
+            </div>
         </header>
 
-        <section class="cards-grid" id="cards">
+        <main>
+            <section class="hero">
+                <div class="hero-copy reveal">
+                    <p class="eyebrow">Autonomous Multi-Agent Research Engine</p>
+                    <h1 class="hero-title">
+    <span class="title-line line1">Ask once</span>
 
-            <a href="#" class="card card-workspace" id="card-workspace" data-target="workspace">
-                <div class="card-glow card-glow-warm"></div>
-                <div class="card-content">
-                    <div class="card-icon-wrap">
-                        <svg class="card-icon" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <rect x="6" y="10" width="36" height="28" rx="4" stroke="currentColor" stroke-width="2.5"/>
-                            <path d="M6 18h36" stroke="currentColor" stroke-width="2.5"/>
-                            <circle cx="11" cy="14" r="1.5" fill="currentColor"/>
-                            <circle cx="16" cy="14" r="1.5" fill="currentColor"/>
-                            <circle cx="21" cy="14" r="1.5" fill="currentColor"/>
-                            <path d="M14 26l4 4 8-8" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-                        </svg>
-                    </div>
-                    <div class="card-badge badge-live">
-                        <span class="badge-dot"></span>
-                        Production
-                    </div>
-                    <h2 class="card-title">Launch InsightSwarm Workspace</h2>
-                    <p class="card-description">
-                        Submit research topics, track progress in real-time, and download
-                        comprehensive PDF reports - your primary research interface.
+    <span
+    class="title-line line2 gradient-text"
+    data-text="A swarm of agents">
+    A swarm of agents
+</span>
+
+    <span class="title-line line3">answers.</span>
+</h1>
+                    <p class="hero-desc">
+                        InsightSwarm plans, searches, and cross-checks in parallel —
+                        turning a single research question into a comprehensive,
+                        citation-backed report.
                     </p>
-                    <div class="card-cta">
-                        <span>Open Workspace</span>
-                        <svg class="cta-arrow" width="20" height="20" viewBox="0 0 20 20" fill="none">
-                            <path d="M4 10h12m0 0l-4-4m4 4l-4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                        </svg>
+                    <div class="chip-row" role="list">
+                        <span class="chip" role="listitem">Planning</span>
+                        <span class="chip" role="listitem">Web Retrieval</span>
+                        <span class="chip" role="listitem">Multi-Agent Synthesis</span>
+                        <span class="chip" role="listitem">Citation Tracking</span>
+                        <span class="chip" role="listitem">PDF Export</span>
                     </div>
                 </div>
-            </a>
 
-            <a href="#" class="card card-dashboard" id="card-dashboard" data-target="dashboard">
-                <div class="card-glow card-glow-cool"></div>
-                <div class="card-content">
-                    <div class="card-icon-wrap">
-                        <svg class="card-icon" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <rect x="6" y="6" width="36" height="36" rx="4" stroke="currentColor" stroke-width="2.5"/>
-                            <path d="M6 18h36" stroke="currentColor" stroke-width="2.5"/>
-                            <path d="M18 18v24" stroke="currentColor" stroke-width="2.5"/>
-                            <rect x="22" y="24" width="8" height="3" rx="1" fill="currentColor" opacity="0.6"/>
-                            <rect x="22" y="30" width="12" height="3" rx="1" fill="currentColor" opacity="0.4"/>
-                            <rect x="22" y="36" width="6" height="3" rx="1" fill="currentColor" opacity="0.25"/>
-                            <circle cx="12" cy="24" r="2" fill="currentColor" opacity="0.5"/>
-                            <circle cx="12" cy="30" r="2" fill="currentColor" opacity="0.5"/>
-                            <circle cx="12" cy="36" r="2" fill="currentColor" opacity="0.5"/>
-                            <circle cx="11" cy="12" r="1.5" fill="currentColor"/>
-                            <circle cx="16" cy="12" r="1.5" fill="currentColor"/>
-                        </svg>
+                <div class="hero-visual reveal">
+                    <div class="console" id="console">
+                        <div class="console-head">
+                            <div class="console-dots">
+                                <span></span><span></span><span></span>
+                            </div>
+                            <span class="console-label">Agent Activity</span>
+                            <span class="console-live"><span class="status-dot"></span>Live</span>
+                        </div>
+                        <div class="console-body" id="console-body" aria-live="polite"></div>
                     </div>
-                    <div class="card-badge badge-dev">
-                        <span class="badge-dot"></span>
-                        Developer
-                    </div>
-                    <h2 class="card-title">Open Developer Control Center</h2>
-                    <p class="card-description">
-                        Monitor system health, inspect research runs, view agent traces,
-                        and manage reports - built for developers and operators.
-                    </p>
-                    <div class="card-cta">
-                        <span>Open Dashboard</span>
-                        <svg class="cta-arrow" width="20" height="20" viewBox="0 0 20 20" fill="none">
-                            <path d="M4 10h12m0 0l-4-4m4 4l-4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                        </svg>
-                    </div>
+                    <div class="visual-glow" aria-hidden="true"></div>
                 </div>
-            </a>
+            </section>
 
-        </section>
+            <div class="marquee reveal" aria-hidden="true">
+                <div class="marquee-track">
+                    <span>Multi-Agent Planning</span>
+                    <span class="dot">·</span>
+                    <span>Web-Scale Retrieval</span>
+                    <span class="dot">·</span>
+                    <span>Citation-Backed Synthesis</span>
+                    <span class="dot">·</span>
+                    <span>Real-Time Agent Traces</span>
+                    <span class="dot">·</span>
+                    <span>Automated PDF Reports</span>
+                    <span class="dot">·</span>
+                    <span>Parallel Research</span>
+                    <span class="dot">·</span>
+                    <span>Multi-Agent Planning</span>
+                    <span class="dot">·</span>
+                    <span>Web-Scale Retrieval</span>
+                    <span class="dot">·</span>
+                    <span>Citation-Backed Synthesis</span>
+                    <span class="dot">·</span>
+                    <span>Real-Time Agent Traces</span>
+                    <span class="dot">·</span>
+                    <span>Automated PDF Reports</span>
+                    <span class="dot">·</span>
+                    <span>Parallel Research</span>
+                    <span class="dot">·</span>
+                </div>
+            </div>
 
-        <footer class="footer">
-            <p>© InsightSwarm &dash; Sipher Capstone Project</p>
+            <section class="how" aria-labelledby="how-heading">
+                <h2 id="how-heading" class="section-title reveal">How the swarm works</h2>
+                <div class="how-grid">
+                   <div class="how-step reveal">
+    <div class="how-top">
+        <span class="how-index">01</span>
+
+        <video class="how-video" autoplay muted loop playsinline>
+            <source src="animated/plan.mp4" type="video/mp4">
+        </video>
+    </div>
+
+    <h3>Plan</h3>
+
+    <p>Your question is broken into research-ready subtopics an agent can act on independently.</p>
+</div>
+     <div class="how-step reveal">
+    <div class="how-top">
+        <span class="how-index">02</span>
+
+        <video class="how-video" autoplay muted loop playsinline>
+            <source src="animated/research.mp4" type="video/mp4">
+        </video>
+    </div>
+
+    <h3>Research</h3>
+
+    <p>Agents search, read and cross check resources in parallel instead of one step at a time</p>
+</div>
+                    <div class="how-step reveal">
+    <div class="how-top">
+        <span class="how-index">03</span>
+
+        <video class="how-video" autoplay muted loop playsinline>
+            <source src="animated/synthesize.mp4" type="video/mp4">
+        </video>
+    </div>
+
+    <h3>Synthesize</h3>
+
+    <p>Finding are merged into a single citation-backend report,ready to read or export. </p>
+</div>
+                </div>
+            </section>
+
+            <section class="cards-grid" id="cards" aria-label="Enter InsightSwarm">
+
+                <a href="#" class="card card-workspace reveal" id="card-workspace" data-target="workspace">
+                    <div class="card-glow card-glow-a"></div>
+                    <div class="card-content">
+                        <div class="card-top">
+                            <div class="card-icon-wrap">
+                                <svg class="card-icon" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <rect x="6" y="10" width="36" height="28" rx="4" stroke="currentColor" stroke-width="2.5"/>
+                                    <path d="M6 18h36" stroke="currentColor" stroke-width="2.5"/>
+                                    <circle cx="11" cy="14" r="1.5" fill="currentColor"/>
+                                    <circle cx="16" cy="14" r="1.5" fill="currentColor"/>
+                                    <circle cx="21" cy="14" r="1.5" fill="currentColor"/>
+                                    <path d="M14 26l4 4 8-8" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                                </svg>
+                            </div>
+                            <div class="card-badge badge-a">
+                                <span class="badge-dot"></span>
+                                Production
+                            </div>
+                        </div>
+                        <h2 class="card-title">InsightSwarm Workspace</h2>
+                        <p class="card-description">
+                            Submit a research topic, watch agents work in real time,
+                            and download a complete report.
+                        </p>
+                        <ul class="card-features">
+                            <li>Real-time progress tracking</li>
+                            <li>Citation-backed PDF export</li>
+                            <li>Built for researchers</li>
+                        </ul>
+                        <div class="card-cta">
+                            <span>Open Workspace</span>
+                            <svg class="cta-arrow" width="18" height="18" viewBox="0 0 20 20" fill="none">
+                                <path d="M4 10h12m0 0l-4-4m4 4l-4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                        </div>
+                    </div>
+                </a>
+
+                <a href="#" class="card card-dashboard reveal" id="card-dashboard" data-target="dashboard">
+                    <div class="card-glow card-glow-b"></div>
+                    <div class="card-content">
+                        <div class="card-top">
+                            <div class="card-icon-wrap">
+                                <svg class="card-icon" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <rect x="6" y="6" width="36" height="36" rx="4" stroke="currentColor" stroke-width="2.5"/>
+                                    <path d="M6 18h36" stroke="currentColor" stroke-width="2.5"/>
+                                    <path d="M18 18v24" stroke="currentColor" stroke-width="2.5"/>
+                                    <rect x="22" y="24" width="8" height="3" rx="1" fill="currentColor" opacity="0.6"/>
+                                    <rect x="22" y="30" width="12" height="3" rx="1" fill="currentColor" opacity="0.4"/>
+                                    <rect x="22" y="36" width="6" height="3" rx="1" fill="currentColor" opacity="0.25"/>
+                                    <circle cx="12" cy="24" r="2" fill="currentColor" opacity="0.5"/>
+                                    <circle cx="12" cy="30" r="2" fill="currentColor" opacity="0.5"/>
+                                    <circle cx="12" cy="36" r="2" fill="currentColor" opacity="0.5"/>
+                                    <circle cx="11" cy="12" r="1.5" fill="currentColor"/>
+                                    <circle cx="16" cy="12" r="1.5" fill="currentColor"/>
+                                </svg>
+                            </div>
+                            <div class="card-badge badge-b">
+                                <span class="badge-dot"></span>
+                                Developer
+                            </div>
+                        </div>
+                        <h2 class="card-title">Developer Control Center</h2>
+                        <p class="card-description">
+                            Inspect agent traces, monitor system health, and manage
+                            past research runs.
+                        </p>
+                        <ul class="card-features">
+                            <li>Live agent traces</li>
+                            <li>System health monitoring</li>
+                            <li>Built for operators</li>
+                        </ul>
+                        <div class="card-cta">
+                            <span>Open Dashboard</span>
+                            <svg class="cta-arrow" width="18" height="18" viewBox="0 0 20 20" fill="none">
+                                <path d="M4 10h12m0 0l-4-4m4 4l-4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                        </div>
+                    </div>
+                </a>
+
+            </section>
+        </main>
+
+        <footer class="footer reveal">
+            <div class="footer-brand">
+                <span class="brand-mark small" aria-hidden="true">
+                    
+    <img src="favicon.svg" alt="" width="19" height="19">
+</span>
+                
+                <span>InsightSwarm — Multi-Agent Research Engine</span>
+            </div>
+            <p>© InsightSwarm — Sipher Capstone Project</p>
         </footer>
-    </main>
+
+    </div>
 
     <script src="js/script.js"></script>
 </body>
