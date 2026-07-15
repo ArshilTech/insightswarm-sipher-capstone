@@ -163,7 +163,4 @@ gantt
 
 ---
 
-## Open Questions
 
-> [!IMPORTANT]
-> **Should I build the landing portal now?** I can create it immediately with claymorphism, separate folders, and minimal comments — ready for you to review.
