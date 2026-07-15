@@ -1,11 +1,7 @@
+import SubmitPage from './pages/SubmitPage';
 
-function App(){
-
-  return(
-    <div>
-      <h1 className="bg-red-200">REACT + TAILWIND SETUP</h1>
-    </div>
-  )
+function App() {
+  return <SubmitPage />;
 }
 
 export default App;
