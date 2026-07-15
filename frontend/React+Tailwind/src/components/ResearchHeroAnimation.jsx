@@ -15,8 +15,8 @@ export default function ResearchHeroAnimation() {
             cy="80"
             r="72"
             fill="none"
-            stroke="rgba(45,212,191,0.2)"
-            strokeWidth="1.5"
+            stroke="rgba(5,104,91,0.75)"
+            strokeWidth="2"
             strokeDasharray="8 14"
           />
         </svg>
@@ -34,8 +34,8 @@ export default function ResearchHeroAnimation() {
             cy="64"
             r="56"
             fill="none"
-            stroke="rgba(45,212,191,0.15)"
-            strokeWidth="1"
+            stroke="rgba(5,104,91,0.6)"
+            strokeWidth="1.6"
             strokeDasharray="6 18"
           />
         </svg>
@@ -51,7 +51,7 @@ export default function ResearchHeroAnimation() {
           className="w-20 h-20 rounded-full"
           style={{
             background:
-              'radial-gradient(circle, rgba(45,212,191,0.2) 0%, transparent 70%)',
+              'radial-gradient(circle, rgba(5,104,91,0.42) 0%, rgba(5,104,91,0.18) 55%, transparent 70%)',
           }}
         />
       </motion.div>
@@ -67,8 +67,8 @@ export default function ResearchHeroAnimation() {
           height="52"
           viewBox="0 0 24 24"
           fill="none"
-          stroke="#2dd4bf"
-          strokeWidth="1.8"
+          stroke="#084e44"
+          strokeWidth="2.2"
           strokeLinecap="round"
           strokeLinejoin="round"
         >
@@ -80,7 +80,7 @@ export default function ResearchHeroAnimation() {
             y1="8"
             x2="14"
             y2="8"
-            stroke="rgba(45,212,191,0.4)"
+            stroke="rgba(15,118,110,0.65)"
             strokeWidth="1.2"
           />
           <line
@@ -88,7 +88,7 @@ export default function ResearchHeroAnimation() {
             y1="11"
             x2="12"
             y2="11"
-            stroke="rgba(45,212,191,0.3)"
+            stroke="rgba(15,118,110,0.45)"
             strokeWidth="1.2"
           />
           <line
@@ -96,7 +96,7 @@ export default function ResearchHeroAnimation() {
             y1="14"
             x2="13"
             y2="14"
-            stroke="rgba(45,212,191,0.25)"
+            stroke="rgba(15,118,110,0.35)"
             strokeWidth="1.2"
           />
         </svg>
@@ -121,9 +121,9 @@ export default function ResearchHeroAnimation() {
             width="20"
             height="26"
             rx="3"
-            stroke="rgba(45,212,191,0.5)"
-            strokeWidth="1.2"
-            fill="rgba(45,212,191,0.05)"
+            stroke="rgba(5,104,91,0.84)"
+            strokeWidth="1.3"
+            fill="rgba(5,104,91,0.12)"
           />
           <line
             x1="5"
@@ -176,9 +176,9 @@ export default function ResearchHeroAnimation() {
             width="16"
             height="22"
             rx="2.5"
-            stroke="rgba(45,212,191,0.4)"
-            strokeWidth="1"
-            fill="rgba(45,212,191,0.04)"
+            stroke="rgba(5,104,91,0.7)"
+            strokeWidth="1.2"
+            fill="rgba(5,104,91,0.1)"
           />
           <line
             x1="4"
@@ -223,9 +223,9 @@ export default function ResearchHeroAnimation() {
             width="14"
             height="18"
             rx="2"
-            stroke="rgba(45,212,191,0.35)"
-            strokeWidth="1"
-            fill="rgba(45,212,191,0.03)"
+            stroke="rgba(5,104,91,0.64)"
+            strokeWidth="1.2"
+            fill="rgba(5,104,91,0.08)"
           />
           <line
             x1="4"

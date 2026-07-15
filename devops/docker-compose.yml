@@ -1,4 +1,18 @@
-version: "3.9"
 services:
-  app:
-    image: hello-world
+  backend:
+    build:
+      context: ..
+      dockerfile: devops/Dockerfile.backend
+    ports:
+      - "8000:8000"
+    env_file:
+      - ../.env
+
+  frontend:
+    build:
+      context: ..
+      dockerfile: devops/Dockerfile.frontend
+    ports:
+      - "5173:5173"
+    depends_on:
+      - backend
