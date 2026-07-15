@@ -16,3 +16,21 @@ services:
       - "5173:5173"
     depends_on:
       - backend
+
+  landing:
+    build:
+      context: ..
+      dockerfile: devops/Dockerfile.landing
+    ports:
+      - "3001:3001"
+
+  streamlit:
+    build:
+      context: ..
+      dockerfile: devops/Dockerfile.streamlit
+    ports:
+      - "8501:8501"
+    env_file:
+      - ../.env
+    depends_on:
+      - backend
