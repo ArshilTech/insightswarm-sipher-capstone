@@ -3,16 +3,28 @@ from datetime import datetime
 from pathlib import Path
 
 import streamlit as st
+<<<<<<< HEAD
 import streamlit.components.v1 as components
 
 st.set_page_config(
     page_title="InsightSwarm | Agents Tracker",
     page_icon="📋",
+=======
+FAVICON_PATH = Path(__file__).resolve().parent.parent / "favicon.svg"
+
+st.set_page_config(
+    page_title="InsightSwarm - Agents Tracker",
+    page_icon=str(FAVICON_PATH),
+>>>>>>> main
     layout="wide",
     initial_sidebar_state="collapsed",
 )
 
+<<<<<<< HEAD
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
+=======
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+>>>>>>> main
 LOG_DIR = PROJECT_ROOT / "logs"
 LOG_FILES = {
     "Application log (app.log)": LOG_DIR / "app.log",
@@ -20,11 +32,16 @@ LOG_FILES = {
 }
 LOG_PATTERN = re.compile(
     r"^(?P<timestamp>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}) "
+<<<<<<< HEAD
     r"\[(?P<level>\w+)\] (?P<logger>[^\[]+?)\s+"
+=======
+    r"\[(?P<level>\w+)\] (?P<logger>[^\[]+) "
+>>>>>>> main
     r"\[run_id: (?P<run_id>[^\]]+)\] - (?P<message>.*)$"
 )
 MAX_LINES = 400
 
+<<<<<<< HEAD
 # ---------- Pipeline stage definitions ----------
 # Mapped to the REAL nodes in app/graphs/research_graph.py — not the
 # original Academic/Analysis/PDF-Generator lineup, which don't exist
@@ -46,10 +63,13 @@ STAGE_DEFS = [
 META_MATCH = "Background task:"
 STAGE_ORDER = [s["key"] for s in STAGE_DEFS]
 
+=======
+>>>>>>> main
 # ---------- Styling (matches streamlit-app.py) ----------
 st.markdown(
     """
     <style>
+<<<<<<< HEAD
         /* Force the entire HTML/body to take our gradient and override Streamlit Dark Mode */
         html, body, [data-testid="stApp"], .stApp, [data-testid="stAppViewContainer"] {
             background: linear-gradient(135deg, #E7F6F1 0%, #DDF1EA 45%, #D3EDE3 100%) !important;
@@ -77,6 +97,15 @@ st.markdown(
 
         [data-testid="stSidebar"] {
             display: none !important;
+=======
+        .stApp {
+            background: linear-gradient(135deg, #E7F6F1 0%, #DDF1EA 45%, #D3EDE3 100%);
+            color: #1F2937;
+        }
+
+        [data-testid="stSidebar"] {
+            display: none;
+>>>>>>> main
         }
 
         .block-container {
@@ -142,6 +171,7 @@ st.markdown(
             font-size: 1.35rem;
             font-weight: 800;
             line-height: 1.1;
+<<<<<<< HEAD
             word-break: break-word;
         }
 
@@ -155,6 +185,8 @@ st.markdown(
         .tl-metrics-row .metric-card {
             flex: 1;
             min-width: 150px;
+=======
+>>>>>>> main
         }
 
         .log-shell {
@@ -263,7 +295,10 @@ st.markdown(
             text-align: center;
             padding: 2.5rem 1rem;
             line-height: 1.7;
+<<<<<<< HEAD
             color: #4B5D57;
+=======
+>>>>>>> main
         }
 
         .divider {
@@ -366,11 +401,14 @@ st.markdown(
             color: #334155 !important;
         }
 
+<<<<<<< HEAD
         div[data-testid="stRadio"] label p {
             color: #0F2A22 !important;
             font-weight: 600 !important;
         }
 
+=======
+>>>>>>> main
         [data-baseweb="popover"] [role="listbox"] li,
         [data-baseweb="popover"] [role="option"] {
             color: #1F2937 !important;
@@ -396,6 +434,7 @@ st.markdown(
             font-weight: 600;
         }
         .log-message { color: #0F2A22; font-weight: 500; }
+<<<<<<< HEAD
 
                 /* ---------- Agent Accordion (Teal Theme) ---------- */
         .tl-wrap {
@@ -557,16 +596,22 @@ st.markdown(
             align-items: center;
             gap: 0.5rem;
         }
+=======
+        .empty-state { color: #4B5D57; }
+>>>>>>> main
     </style>
     """,
     unsafe_allow_html=True,
 )
 
 
+<<<<<<< HEAD
 def esc(text: str) -> str:
     return (text or "").replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
 
 
+=======
+>>>>>>> main
 def tail_lines(path: Path, max_lines: int = MAX_LINES) -> list[str]:
     if not path.exists():
         return []
@@ -592,20 +637,39 @@ def level_class(level: str) -> str:
 
 def render_log_line(entry: dict | None, raw_line: str) -> str:
     if not entry:
+<<<<<<< HEAD
         return f'<div class="log-line"><span class="log-message">{esc(raw_line)}</span></div>'
+=======
+        escaped = raw_line.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+        return f'<div class="log-line"><span class="log-message">{escaped}</span></div>'
+>>>>>>> main
 
     timestamp = entry["timestamp"]
     level = entry["level"]
     logger = entry["logger"].strip()
     run_id = entry["run_id"]
+<<<<<<< HEAD
     message = esc(entry["message"])
+=======
+    message = (
+        entry["message"]
+        .replace("&", "&amp;")
+        .replace("<", "&lt;")
+        .replace(">", "&gt;")
+    )
+>>>>>>> main
 
     return (
         f'<div class="log-line">'
         f'<span class="log-time">{timestamp}</span> '
         f'<span class="log-level {level_class(level)}">[{level}]</span> '
+<<<<<<< HEAD
         f'<span class="log-logger">{esc(logger)}</span> '
         f'<span class="log-run-id">{esc(run_id)}</span> '
+=======
+        f'<span class="log-logger">{logger}</span> '
+        f'<span class="log-run-id">{run_id}</span> '
+>>>>>>> main
         f'<span class="log-message">- {message}</span>'
         f"</div>"
     )
@@ -649,6 +713,7 @@ def count_levels(entries: list[tuple[dict | None, str]]) -> dict[str, int]:
     return counts
 
 
+<<<<<<< HEAD
 # ---------- Option 2: agent timeline helpers ----------
 
 def classify_stage(message: str) -> str | None:
@@ -1081,6 +1146,8 @@ def render_timeline_panel(run_id: str, entries: list[dict]) -> None:
     st.markdown(full_html, unsafe_allow_html=True)
 
 
+=======
+>>>>>>> main
 def render_log_panel(
     log_path: Path,
     level_filter: str,
@@ -1192,6 +1259,7 @@ def render_log_panel(
 
 
 # ---------- Header ----------
+<<<<<<< HEAD
 col1, col2, col3 = st.columns([1, 4, 1])
 
 with col1:
@@ -1207,10 +1275,17 @@ with col1:
         unsafe_allow_html=True
     )
     st.markdown("<div class='back-button' style='margin-top: 10rem;'>", unsafe_allow_html=True)
+=======
+
+back_col, _ = st.columns([1, 5])
+with back_col:
+    st.markdown("<div class='back-button'>", unsafe_allow_html=True)
+>>>>>>> main
     if st.button("← Back to Dashboard", use_container_width=True, key="back_dashboard"):
         st.switch_page("streamlit-app.py")
     st.markdown("</div>", unsafe_allow_html=True)
 
+<<<<<<< HEAD
 with col2:
     st.markdown(
         """
@@ -1248,4 +1323,87 @@ else:
         </div>
         ''',
         unsafe_allow_html=True,
+=======
+st.markdown(
+    """
+    <div class="hero">
+        <div class="eyebrow">Developer control center</div>
+        <h1>Agents Tracker</h1>
+        <p>
+            Monitor backend agent activity in real time. Tail application logs, filter by run ID or level,
+            and watch new entries stream in while research jobs are running.
+        </p>
+    </div>
+    """,
+    unsafe_allow_html=True,
+)
+
+st.markdown(
+    """
+    <div style="text-align:center;margin-bottom:0.75rem;">
+        <span class="small-chip">Real-time tail</span>
+        <span class="small-chip">Run ID filter</span>
+        <span class="small-chip">Level filter</span>
+    </div>
+    """,
+    unsafe_allow_html=True,
+)
+
+st.markdown("<div class='divider'></div>", unsafe_allow_html=True)
+
+# ---------- Controls ----------
+control_left, control_right = st.columns([1.2, 1])
+with control_left:
+    selected_log = st.selectbox(
+        "Log source",
+        options=list(LOG_FILES.keys()),
+        key="log_source",
+    )
+    live_mode = st.toggle("Live tail (auto-refresh every 2s)", value=True, key="live_tail")
+
+with control_right:
+    level_filter = st.selectbox(
+        "Log level",
+        options=["All", "DEBUG", "INFO", "WARNING", "ERROR"],
+        index=0,
+        key="level_filter",
+    )
+    run_id_filter = st.text_input(
+        "Filter by run ID",
+        placeholder="e.g. abc123 or leave blank for all",
+        key="run_id_filter",
+    )
+    search_text = st.text_input(
+        "Search message",
+        placeholder="Search log text...",
+        key="search_text",
+    )
+
+log_path = LOG_FILES[selected_log]
+
+if live_mode:
+    @st.fragment(run_every=2)
+    def live_log_view() -> None:
+        render_log_panel(
+            log_path=log_path,
+            level_filter=level_filter,
+            run_id_filter=run_id_filter,
+            search_text=search_text,
+            live_mode=True,
+        )
+
+    live_log_view()
+else:
+    refresh_col, _ = st.columns([1, 4])
+    with refresh_col:
+        if st.button("Refresh now", use_container_width=True, key="manual_refresh"):
+            st.rerun()
+
+    render_log_panel(
+        log_path=log_path,
+        level_filter=level_filter,
+        run_id_filter=run_id_filter,
+        search_text=search_text,
+        live_mode=False,
+>>>>>>> main
     )
