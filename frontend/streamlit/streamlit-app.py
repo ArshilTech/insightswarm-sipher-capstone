@@ -11,13 +11,33 @@ st.set_page_config(
 st.markdown(
     """
     <style>
-        .stApp {
-            background: linear-gradient(135deg, #E7F6F1 0%, #DDF1EA 45%, #D3EDE3 100%);
-            color: #1F2937;
+        /* Force the entire HTML/body to take our gradient and override Streamlit Dark Mode */
+        html, body, [data-testid="stApp"], .stApp, [data-testid="stAppViewContainer"] {
+            background: linear-gradient(135deg, #E7F6F1 0%, #DDF1EA 45%, #D3EDE3 100%) !important;
+            background-attachment: fixed !important;
+            color: #1F2937 !important;
+            min-height: 100vh !important;
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+
+        /* Fix Streamlit Dark Mode Headers and Footers */
+        header[data-testid="stHeader"], .stAppHeader {
+            background: transparent !important;
+            background-color: transparent !important;
+            box-shadow: none !important;
+        }
+        
+        [data-testid="stToolbar"] {
+            right: 2rem;
+        }
+        
+        footer, [data-testid="stFooter"] {
+            display: none !important;
         }
 
         [data-testid="stSidebar"] {
-            display: none;
+            display: none !important;
         }
 
         .block-container {
@@ -105,6 +125,7 @@ st.markdown(
 
         .feature-card {
             height: 100%;
+            min-height: 215px;
             background: rgba(255, 255, 255, 0.80);
             border: 1px solid rgba(15, 118, 110, 0.15);
             border-radius: 24px;
@@ -240,24 +261,14 @@ with left1:
     st.markdown(
         """
         <div class="feature-card">
-            <div class="feature-badge badge-primary">Live feature</div>
-            <div class="feature-title">📋 Agents Tracker</div>
-            <div class="feature-desc">
-                Tail backend agent logs in real time. Filter by run ID, log level, or message text
-                while research jobs are running.
-            </div>
-            <div class="feature-meta">
-                <span class="small-chip">Live tail</span>
-                <span class="small-chip">Log filters</span>
-                <span class="small-chip">Run ID</span>
-            </div>
+            <div class="feature-title">🤖 Agents Tracker</div>
         </div>
         """,
         unsafe_allow_html=True,
     )
     st.markdown("<div class='cta-wrap'>", unsafe_allow_html=True)
     if st.button("Open Agents Tracker", use_container_width=True, key="agents_tracker_btn"):
-        st.switch_page("agentstracker.py")
+        st.switch_page("pages/agentstracker.py")
     st.markdown("</div>", unsafe_allow_html=True)
 
 with right1:
@@ -303,7 +314,7 @@ with right2:
             <div class="feature-title">🚧 Feature 4</div>
             <div class="feature-desc">
                 A third placeholder slot for future functionality. This keeps the dashboard aligned
-                with your team’s long-term plan.
+                with your team's long-term plan.
             </div>
             <div class="feature-meta">Placeholder card for later expansion.</div>
         </div>
