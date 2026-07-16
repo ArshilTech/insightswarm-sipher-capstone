@@ -37,6 +37,7 @@ class ResearchState(TypedDict):
     is_verified: bool
     final_report: str
     error: str
+    retry_count: int
 
 # --- 2. Define the Nodes (Agents) ---
 # These are the functions that execute at each step of the graph.
@@ -46,7 +47,7 @@ def intake_node(state: ResearchState) -> Dict:
     log = get_run_logger(__name__, state['run_id'])
     log.info(f"INTAKE: Starting research on: {state['topic']}")
     # In a real app, you might fetch initial context here.
-    return {"sub_questions": [], "sources": [], "draft": "", "is_verified": False, "error": ""}
+    return {"sub_questions": [], "sources": [], "draft": "", "is_verified": False, "error": "", "retry_count": 0}
 
 def plan_node(state: ResearchState) -> Dict:
     """Uses the LLM to break the main topic into sub-questions."""
@@ -149,7 +150,12 @@ def verify_node(state: ResearchState) -> Dict:
     
     is_good = "VERIFIED" in result
     log.info(f"VERIFIER: Result = {result} (is_verified={is_good})")
-    return {"is_verified": is_good}
+
+    if is_good:
+        return {"is_verified": is_good}
+
+    # Only increment on failure so retry_count reflects actual revision attempts
+    return {"is_verified": is_good, "retry_count": state.get("retry_count", 0) + 1}
 
 def render_node(state: ResearchState) -> Dict:
     """Prepares the drafted Markdown for HTML/PDF rendering later."""
@@ -157,6 +163,8 @@ def render_node(state: ResearchState) -> Dict:
     log.info("RENDERER: Storing final markdown report.")
 
     return {"final_report": state["draft"]}
+
+MAX_VERIFICATION_RETRIES = 2
 
 # --- 3. Build the Graph ---
 
@@ -182,6 +190,12 @@ def build_research_graph():
     def check_verification(state: ResearchState):
         log = get_run_logger(__name__, state['run_id'])
         if state.get("is_verified", False):
+            return "renderer"
+        elif state.get("retry_count", 0) >= MAX_VERIFICATION_RETRIES:
+            log.warning(
+                f"VERIFIER: Max retries ({MAX_VERIFICATION_RETRIES}) reached. "
+                "Forcing render with unverified draft."
+            )
             return "renderer"
         else:
             # If it failed, send it back to the synthesizer to fix
