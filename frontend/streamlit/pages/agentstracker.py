@@ -3,10 +3,11 @@ from datetime import datetime
 from pathlib import Path
 
 import streamlit as st
+FAVICON_PATH = Path(__file__).resolve().parent.parent / "favicon.svg"
 
 st.set_page_config(
-    page_title="InsightSwarm | Agents Tracker",
-    page_icon="📋",
+    page_title="InsightSwarm - Agents Tracker",
+    page_icon=str(FAVICON_PATH),
     layout="wide",
     initial_sidebar_state="collapsed",
 )
@@ -541,6 +542,7 @@ def render_log_panel(
 
 
 # ---------- Header ----------
+
 back_col, _ = st.columns([1, 5])
 with back_col:
     st.markdown("<div class='back-button'>", unsafe_allow_html=True)
