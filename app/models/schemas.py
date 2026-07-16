@@ -46,6 +46,7 @@ class ReportResponse(BaseModel):
     created_at: Optional[datetime] = None
     file: Optional[ReportFileSchema] = None
     download_url: Optional[str] = None # We will generate this dynamically later
+    content_json: Optional[dict[str, Any]] = None
 
     class Config:
         from_attributes = True
