@@ -1,8 +1,8 @@
 import streamlit as st
 
 st.set_page_config(
-    page_title="InsightSwarm | Activity Dashboard",
-    page_icon="📊",
+    page_title="InsightSwarm - Activity Dashboard",
+    page_icon="favicon.svg",
     layout="wide",
     initial_sidebar_state="collapsed",
 )
@@ -313,13 +313,3 @@ with right2:
     st.button("Coming Soon", use_container_width=True, disabled=True, key="soon_btn_3")
 
 st.markdown("<div class='divider'></div>", unsafe_allow_html=True)
-
-# ---------- Helpful note ----------
-st.markdown(
-    """
-    <div class="footer-note">
-        Open <b>Agents Tracker</b> to monitor live backend logs from the FastAPI service.
-    </div>
-    """,
-    unsafe_allow_html=True,
-)
