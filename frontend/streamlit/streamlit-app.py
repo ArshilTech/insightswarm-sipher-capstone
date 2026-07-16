@@ -257,7 +257,7 @@ with left1:
     )
     st.markdown("<div class='cta-wrap'>", unsafe_allow_html=True)
     if st.button("Open Agents Tracker", use_container_width=True, key="agents_tracker_btn"):
-        st.switch_page("agentstracker.py")
+        st.switch_page("pages/agentstracker.py")
     st.markdown("</div>", unsafe_allow_html=True)
 
 with right1:
