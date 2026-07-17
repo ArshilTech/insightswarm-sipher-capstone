@@ -1,11 +1,29 @@
 import streamlit as st
+import requests
 
+#--------Backend API Config---------
+BACKEND_URL = "http://localhost:8000/api/research"
+
+#----Helper functions for API call---------
+def fetch_history_data():
+    try:
+        response = requests.get(BACKEND_URL)
+        if response.status_code == 200:
+            return response.json().get("data", [])
+    except requests.exceptions.ConnectionError:
+        st.error("Could not connect to backend. Ensure backend is running.")
+    except Exception as e:
+        st.error(f"Error fetching history data: {e}")
+    return []
+
+#-----------Page Configuraion----------
 st.set_page_config(
-    page_title="InsightSwarm - Activity Dashboard",
-    page_icon="favicon.svg",
+    page_title="InsightSwarm | Research History",
+    page_icon="🕒",
     layout="wide",
     initial_sidebar_state="collapsed",
 )
+
 
 # ---------- Styling ----------
 st.markdown(
@@ -222,101 +240,54 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# ---------- Header ----------
+#-----Page Header-----------
 st.markdown(
     """
     <div class="hero">
-        <h1>Activity Dashboard</h1>
+    <h1>Research History</h1>
+    <p>Access your past auntonomous research jobs and AI-Generated reports.</p>
     </div>
-    """,
-    unsafe_allow_html=True,
+""", unsafe_allow_html=True
 )
 
-st.markdown("<div class='divider'></div>", unsafe_allow_html=True)
+#---------Fetch data from beckend -------------
+hisotry_data = fetch_history_data()
 
-# ---------- Feature cards ----------
-left1, right1 = st.columns(2)
-with left1:
-    st.markdown(
-        """
-        <div class="feature-card">
-            <div class="feature-badge badge-primary">Live feature</div>
-            <div class="feature-title">📋 Agents Tracker</div>
-            <div class="feature-desc">
-                Tail backend agent logs in real time. Filter by run ID, log level, or message text
-                while research jobs are running.
-            </div>
-            <div class="feature-meta">
-                <span class="small-chip">Live tail</span>
-                <span class="small-chip">Log filters</span>
-                <span class="small-chip">Run ID</span>
-            </div>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
-    st.markdown("<div class='cta-wrap'>", unsafe_allow_html=True)
-    if st.button("Open Agents Tracker", use_container_width=True, key="agents_tracker_btn"):
-        st.switch_page("pages/agentstracker.py")
-    st.markdown("</div>", unsafe_allow_html=True)
+#----------Render History List----------------
+if not hisotry_data:
+    st.info("No research history found.")
+else: 
+    for item in hisotry_data:
+        with st.container():
+            col1, col2 = st.columns([11, 1], vertical_alignment="center")
 
-with right1:
-    st.markdown(
-        """
-        <div class="feature-card">
-            <div class="feature-badge badge-primary">Live Feature</div>
-            <div class="feature-title">🕒 Research History</div>
-            <div class="feature-desc">
-                Your complete archive of autonomous market and academic intelligence.Export your 
-              autonomous research findings.
-            </div>
-                <div class="feature-meta">
-                <span class="small-chip">Research History</span>
-                <span class="small-chip">Researched Data</span>
-                <span class="small-chip">Download</span>
-            </div>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
-    st.markdown("<div class='cta-wrap'>", unsafe_allow_html=True)
-    if st.button("Research History", use_container_width=True, key="research_history_btn"):
-        st.switch_page("pages/research-history.py")
-    st.markdown("</div>", unsafe_allow_html=True)
+            with col1:
+                badge_class = "badge-success" if item["status"] == "Completed" else "badge-archived"
+                st.markdown(f"""
+                    <div>
+                        <div class="badge {badge_class}">{item["status"]}</div>
+                        <div class="history-title">{item["title"]}</div>
+                        <div class="history-meta">
+                            <b>ID:</b> {item["id"]} &nbsp;|&nbsp; 
+                            <b>Generated:</b> {item["date"]} &nbsp;|&nbsp; 
+                            <b>Agents Deployed:</b> {item["agents_used"]}
+                        </div>
+                    </div>
+                    """,
+                    unsafe_allow_html=True
+                )
+            with col2:
+                #Three dots menu
+                with st.popover("⋮"):
+                    st.markdown("**Actions**")
 
-left2, right2 = st.columns(2)
-with left2:
-    st.markdown(
-        """
-        <div class="feature-card">
-            <div class="feature-badge badge-soon">Coming soon</div>
-            <div class="feature-title">🚧 Feature 3</div>
-            <div class="feature-desc">
-                Another future module. Keeping the layout ready now makes it easy to add more tools
-                without redesigning the dashboard later.
-            </div>
-            <div class="feature-meta">Placeholder card for later expansion.</div>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
-    st.button("Coming Soon", use_container_width=True, disabled=True, key="soon_btn_2")
+                    if item["status"] == "Completed":
+                        st.link_button("📄 View Full Report", url=f"http://localhost:5173/report/{item['id']}", use_container_width=True)
+                        st.link_button("⬇️ Download PDF", url=f"http://localhost:8000/api/research/{item['id']}/download", use_container_width=True)
+                    else:
+                        st.info("Report not generated yet or run failed.")
 
-with right2:
-    st.markdown(
-        """
-        <div class="feature-card">
-            <div class="feature-badge badge-soon">Coming soon</div>
-            <div class="feature-title">🚧 Feature 4</div>
-            <div class="feature-desc">
-                A third placeholder slot for future functionality. This keeps the dashboard aligned
-                with your team’s long-term plan.
-            </div>
-            <div class="feature-meta">Placeholder card for later expansion.</div>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
-    st.button("Coming Soon", use_container_width=True, disabled=True, key="soon_btn_3")
+st.write("")
 
-st.markdown("<div class='divider'></div>", unsafe_allow_html=True)
+#change app.py to dashboard
+st.button("← Back to Dashboard", on_click=lambda: st.switch_page("pages/streamlit-app.py"))

@@ -152,6 +152,28 @@ async def start_research(
     # 5. Return the new research run details to the client
     return new_run
 
+# --- API Endpoint to List All Research Runs ---
+
+@router.get("/research")
+async def list_research_runs(
+    session: AsyncSession = Depends(get_async_session)
+):
+    stmt = select(ResearchRun).options(selectinload(ResearchRun.report)).order_by(ResearchRun.created_at.desc())
+    result = await session.execute(stmt)
+    runs = result.scalars().all()
+    
+    data = []
+    for run in runs:
+        agents_count = 5 if run.depth == "deep" else 3
+        data.append({
+            "id": run.id,
+            "title": run.report.title if run.report else f"Research on {run.topic}",
+            "status": run.status.capitalize(),
+            "date": run.created_at.strftime("%Y-%m-%d %H:%M:%S") if run.created_at else "",
+            "agents_used": agents_count
+        })
+    return {"data": data}
+
 # --- API Endpoint to Check Research Status ---
 
 @router.get("/research/{run_id}", response_model=ResearchRunResponse)
