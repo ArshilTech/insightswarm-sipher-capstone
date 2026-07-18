@@ -139,9 +139,8 @@ export default function ReportPage() {
   // 1. PRODUCTION LOADING STATE
   if (status === 'loading' || !report) {
     return (
-      <div className="relative flex h-screen w-screen overflow-hidden bg-slate-50 text-slate-900">
-        <div className="flex h-full w-full flex-row z-10">
-          <div className="flex h-full w-full flex-col justify-between border-r border-slate-200 bg-white p-8 lg:w-[420px] shrink-0">
+      <div className="relative flex h-screen w-screen flex-col overflow-hidden bg-slate-50 text-slate-900 lg:flex-row">
+        <div className="flex h-auto w-full flex-col justify-between border-b border-slate-200 bg-white p-8 z-10 lg:h-full lg:w-105 lg:shrink-0 lg:border-b-0 lg:border-r">
             <div className="space-y-8 animate-pulse">
               <div className="flex items-center gap-2 border-b border-slate-100 pb-5">
                 <div className="h-2 w-2 rounded-full bg-teal-400 animate-ping" />
@@ -181,8 +180,8 @@ export default function ReportPage() {
             </div>
           </div>
           
-          <div className="hidden h-full flex-1 flex-col bg-slate-50/50 lg:flex items-center justify-center p-8">
-            <div className="h-full w-full rounded-2xl border border-slate-200/60 bg-white/50 backdrop-blur-sm shadow-sm flex items-center justify-center">
+          <div className="flex h-[45vh] min-h-70 w-full flex-1 flex-col items-center justify-center bg-slate-50/50 p-4 sm:p-6 lg:h-full lg:min-h-0 lg:p-8">
+            <div className="flex h-full w-full items-center justify-center rounded-2xl border border-slate-200/60 bg-white/50 shadow-sm backdrop-blur-sm">
               <div className="relative flex items-center justify-center">
                 <div className="absolute h-16 w-16 animate-ping rounded-full border border-teal-200 opacity-50" />
                 <div className="h-8 w-8 animate-spin rounded-full border-2 border-teal-600 border-t-transparent" />
@@ -190,7 +189,6 @@ export default function ReportPage() {
             </div>
           </div>
         </div>
-      </div>
     )
   }
 
@@ -219,8 +217,8 @@ export default function ReportPage() {
 
   // 3. PRODUCTION COMPLETED STATE 
   return (
-    <div className="relative flex h-screen w-screen overflow-hidden bg-slate-50 text-slate-900">
-      <div className="relative flex h-full w-full flex-col justify-between overflow-y-auto border-r border-slate-200 bg-white p-8 lg:w-[420px] shrink-0 z-10">
+    <div className="relative flex h-screen w-screen flex-col overflow-hidden bg-slate-50 text-slate-900 lg:flex-row">
+      <div className="relative flex h-auto w-full flex-col justify-between overflow-y-auto border-b border-slate-200 bg-white p-8 z-10 lg:h-full lg:w-105 lg:shrink-0 lg:border-b-0 lg:border-r">
         <motion.div 
           initial="hidden" 
           animate="visible" 
@@ -291,8 +289,8 @@ export default function ReportPage() {
         </motion.div>
       </div>
 
-      <div className="hidden h-full flex-1 flex-col bg-slate-50 lg:flex z-10 p-6 xl:p-8">
-        <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.2, duration: 0.4 }} className="h-full w-full overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-xl flex flex-col">
+      <div className="flex h-[50vh] min-h-80 w-full flex-1 flex-col bg-slate-50 z-10 p-4 sm:p-6 xl:p-8 lg:h-full lg:min-h-0">
+        <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.2, duration: 0.4 }} className="flex h-full w-full flex-col overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-xl">
           <div className="h-12 border-b border-slate-100 bg-white px-5 flex items-center justify-between shrink-0 text-xs text-slate-600">
             <span className="font-semibold text-slate-700">Document Viewer</span>
           </div>
