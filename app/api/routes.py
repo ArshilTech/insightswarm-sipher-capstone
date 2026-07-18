@@ -76,12 +76,18 @@ async def run_research_background(initial_state: ResearchState):
                     run_logger.error(f"Background task: PDF generation failed: {pdf_error}", exc_info=True)
                     # Continue without PDF, report still has markdown content
             
-            # Calculate sources count
-            citations = re.findall(r'\[\d+\]', final_markdown)
-            sources_count = len(set(citations)) if citations else 0
+            # Sources count comes directly from the graph's gathered sources,
+            # not from parsing citation markers out of the rendered markdown
+            sources_count = len(final_state.get("sources", []))
+
+            if sources_count == 0:
+                citations = re.findall(r'\[\d+\]', final_markdown)
+                sources_count = len(set(citations)) if citations else 0
+
             if sources_count == 0:
                 links = re.findall(r'\[([^\]]+)\]\((https?://[^\)]+)\)', final_markdown)
                 sources_count = len(set(links)) if links else 4
+
 
             new_report.content_json = {
                 "raw_markdown": final_markdown,

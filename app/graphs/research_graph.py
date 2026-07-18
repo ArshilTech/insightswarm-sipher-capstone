@@ -73,6 +73,7 @@ def research_node(state: ResearchState) -> Dict:
     log.info(f"RESEARCHER: Gathering sources for {len(state['sub_questions'])} questions.")
     
     all_sources = []
+    search_errors = []
     for question in state["sub_questions"]:
         log.info(f"Searching for: {question}")
 
@@ -89,10 +90,13 @@ def research_node(state: ResearchState) -> Dict:
                     })
         except Exception as e:
             log.error(f"Error during Tavily search: {e}", exc_info=True)
-            state["error"] += f"Error during search for '{question}': {e}\n"
+            search_errors.append(f"Error during search for '{question}': {e}")
     
     # Because we used Annotated[..., operator.add] in the state, this will append to the list
-    return {"sources": all_sources}
+    return {
+        "sources": all_sources,
+        "error": state.get("error", "") + "".join(f"{err}\n" for err in search_errors)
+    }
 
 def synthesize_node(state: ResearchState) -> Dict:
     """Uses an LLM to draft the report based on gathered sources."""
