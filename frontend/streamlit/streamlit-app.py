@@ -1,4 +1,6 @@
 import streamlit as st
+import streamlit.components.v1 as components
+
 
 st.set_page_config(
     page_title="InsightSwarm - Activity Dashboard",
@@ -427,9 +429,68 @@ st.markdown(
             position: relative;
             z-index: 10;
         }
+
     </style>
     """,
     unsafe_allow_html=True,
+)
+
+# ---------- Back to Home ----------
+components.html(
+    """
+    <html>
+    <head>
+    <style>
+        html, body { margin: 0; padding: 0; background: transparent; }
+        .back-home-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+            font-weight: 600;
+            font-size: 0.92rem;
+            color: #115e56;
+            text-decoration: none;
+            padding: 0.5rem 0.9rem;
+            border-radius: 12px;
+            border: 1px solid rgba(7, 46, 42, 0.1);
+            background: #f3fcfa;
+            box-shadow: 0 1px 2px rgba(7, 46, 42, 0.05), 0 8px 20px -10px rgba(13, 148, 136, 0.25);
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .back-home-btn:hover { transform: translateX(-2px); }
+    </style>
+    </head>
+    <body>
+       <a href="javascript:void(0)" class="back-home-btn" id="backHomeBtn">← Back to Home</a>
+        <script>
+            document.getElementById('backHomeBtn').addEventListener('click', function() {
+                // The sandboxed iframe can't navigate/close the top-level tab directly.
+                // allow-same-origin lets us inject a script into the parent document instead —
+                // it then runs unsandboxed, in the parent's own execution context.
+                var s = window.parent.document.createElement('script');
+                s.textContent = `
+                    (function() {
+                        try {
+                            if (window.opener && !window.opener.closed) {
+                                window.opener.focus();
+                                window.close();
+                            } else {
+                                window.location.href = 'http://localhost:3001';
+                            }
+                        } catch (e) {
+                            window.location.href = 'http://localhost:3001';
+                        }
+                    })();
+                `;
+                window.parent.document.body.appendChild(s);
+            });
+        </script>
+    </body>
+    </html>
+    """,
+    height=60,
 )
 
 # ---------- Header ----------
