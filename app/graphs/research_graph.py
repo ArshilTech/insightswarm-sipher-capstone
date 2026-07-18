@@ -12,7 +12,7 @@ from app.core import get_run_logger
 load_dotenv()
 
 # --- Initializations ---
-llm_model = os.getenv("LLM_MODEL", "qwen/qwen3-32b")
+llm_model = os.getenv("LLM_MODEL", "meta-llama/llama-prompt-guard-2-22m")
 llm = ChatGroq(model=llm_model, temperature=0)
 
 # Initialize the Tavily Search Tool
