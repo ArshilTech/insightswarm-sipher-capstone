@@ -1,7 +1,9 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import ResearchHeroAnimation from '../components/ResearchHeroAnimation';
-import { LoadingSpinner, SuccessCheckmark } from '../components/Feedback';
+import ResearchPipelineAnimation from '../components/ResearchPipelineAnimation';
+import { LoadingSpinner } from '../components/Feedback';
 
 const API_BASE = 'http://127.0.0.1:8000/api';
 
@@ -69,8 +71,22 @@ const letterVariants = {
   },
 };
 
+const LANDING_URL = import.meta.env.VITE_LANDING_URL || 'http://localhost:3001';
+
 export default function SubmitPage() {
+  const navigate = useNavigate();
   const [topic, setTopic] = useState('');
+  
+  const handleBackToLanding = (e) => {
+    if (window.opener) {
+      e.preventDefault();
+      window.close();
+      // Fallback in case window.close() is blocked or doesn't work
+      setTimeout(() => {
+        window.location.href = LANDING_URL;
+      }, 150);
+    }
+  };
   const [instructions, setInstructions] = useState('');
   const depth = 'standard';
   const [loading, setLoading] = useState(false);
@@ -119,13 +135,11 @@ export default function SubmitPage() {
     }
   };
 
-  const handleReset = () => {
-    setTopic('');
-    setInstructions('');
-    setRunId(null);
-    setError('');
-    setCharCount(0);
-  };
+  const handlePipelineComplete = useCallback(() => {
+    if (runId) {
+      navigate(`/report/${runId}`);
+    }
+  }, [runId, navigate]);
 
   const [currentWordIndex, setCurrentWordIndex] = useState(0);
   const [typedText, setTypedText] = useState('');
@@ -162,6 +176,33 @@ export default function SubmitPage() {
 
   return (
     <div className="relative flex min-h-screen items-center justify-center overflow-hidden px-4 py-12 sm:py-16">
+      {/* Back to Landing Page Button */}
+      <motion.a
+        href={LANDING_URL}
+        onClick={handleBackToLanding}
+        className="absolute left-4 top-4 z-20 flex items-center gap-2 rounded-xl border border-teal-900/10 bg-white/60 px-3 py-1.5 text-xs font-semibold uppercase tracking-wider text-slate-700 shadow-sm backdrop-blur-md transition-all duration-300 hover:border-teal-500/30 hover:bg-white/90 hover:text-teal-600 hover:shadow-[0_8px_20px_-6px_rgba(13,148,136,0.15)] sm:left-8 sm:top-8 sm:px-4 sm:py-2.5 sm:text-xs"
+        initial={{ opacity: 0, x: -10 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ delay: 0.2, duration: 0.4 }}
+        whileHover={{ x: -2 }}
+        whileTap={{ scale: 0.97 }}
+      >
+        <svg
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <line x1="19" y1="12" x2="5" y2="12" />
+          <polyline points="12 19 5 12 12 5" />
+        </svg>
+        <span>Back to Landing</span>
+      </motion.a>
+
       <div className="absolute inset-0" style={{ backgroundImage: 'radial-gradient(circle at top left, rgba(34, 211, 238, 0.18), transparent 36%), radial-gradient(circle at bottom right, rgba(13, 148, 136, 0.18), transparent 38%), linear-gradient(135deg, #eafcf9 0%, #e2f8f4 45%, #dcf3ee 100%)' }} />
       <div className="absolute inset-0" style={{ backgroundImage: 'linear-gradient(120deg, rgba(255, 255, 255, 0.55), transparent 45%, rgba(13, 148, 136, 0.08))' }} />
       <div className="absolute left-[-8%] top-[-10%] h-48 w-48 rounded-full bg-cyan-300/25 blur-3xl" />
@@ -325,95 +366,16 @@ export default function SubmitPage() {
             </motion.div>
           ) : (
             <motion.div
-              key="success"
-              className="rounded-4xl border border-teal-600/20 bg-white/70 p-8 text-center shadow-[0_30px_80px_-28px_rgba(13,148,136,0.35)] backdrop-blur-2xl sm:p-10"
-              initial={{ opacity: 0, y: 30, scale: 0.95 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              transition={{ type: 'spring', stiffness: 200, damping: 20 }}
+              key="pipeline"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0, transition: { duration: 0.2 } }}
             >
-              <div className="mb-6">
-                <SuccessCheckmark />
-              </div>
-
-              <h2 className="mb-3 font-display text-xl font-bold text-slate-900 sm:text-2xl">
-                Research Initiated!
-              </h2>
-
-              <p className="mb-6 text-sm text-slate-700">
-                Your research swarm is now gathering and analyzing data. Track
-                progress on the status page.
-              </p>
-
-              <div className="mb-6 inline-block rounded-2xl border border-emerald-200 bg-emerald-50/80 px-5 py-4">
-                <span className="mb-1 block text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">
-                  Run ID
-                </span>
-                <code className="text-sm font-mono font-semibold text-emerald-600">{runId}</code>
-              </div>
-
-              <div className="mb-8 rounded-2xl border border-teal-900/10 bg-white/70 px-5 py-4 text-left shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]">
-                <div className="mb-2 flex items-center gap-2">
-                  <span className="text-sm">🎯</span>
-                  <span className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">
-                    Topic
-                  </span>
-                </div>
-                <p className="text-sm leading-relaxed text-slate-800">{topic}</p>
-                {instructions && (
-                  <>
-                    <div className="mb-2 mt-4 flex items-center gap-2">
-                      <span className="text-sm">📝</span>
-                      <span className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">
-                        Instructions
-                      </span>
-                    </div>
-                    <p className="text-sm leading-relaxed text-slate-600">{instructions}</p>
-                  </>
-                )}
-                <div className="mt-4 flex items-center gap-4 border-t border-teal-900/10 pt-3">
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-xs">📄</span>
-                    <span className="text-xs font-medium text-teal-600">PDF Report</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex gap-3">
-                <motion.button
-                  className="flex-1 rounded-2xl bg-linear-to-r from-teal-600 via-teal-500 to-cyan-400 px-4 py-3 font-semibold text-slate-900 shadow-[0_16px_35px_-12px_rgba(13,148,136,0.45)] transition duration-300 hover:-translate-y-0.5 hover:shadow-[0_20px_40px_-14px_rgba(13,148,136,0.55)]"
-                  whileHover={{ scale: 1.015 }}
-                  whileTap={{ scale: 0.985 }}
-                  onClick={() => {}}
-                >
-                  <div className="flex items-center justify-center gap-2">
-                    <svg
-                      width="18"
-                      height="18"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <circle cx="12" cy="12" r="10" />
-                      <polyline points="12,6 12,12 16,14" />
-                    </svg>
-                    <span>Track Progress</span>
-                  </div>
-                </motion.button>
-
-                <motion.button
-                  type="button"
-                  className="flex-none rounded-2xl border border-teal-600/20 bg-white/80 px-4 py-3 text-sm font-semibold text-teal-700 shadow-sm transition duration-300 hover:-translate-y-0.5"
-                  onClick={handleReset}
-                  whileHover={{ scale: 1.03 }}
-                  whileTap={{ scale: 0.97 }}
-                >
-                  <span className="mr-2">✨</span>
-                  <span>New</span>
-                </motion.button>
-              </div>
+              <ResearchPipelineAnimation
+                isActive={!!runId}
+                onComplete={handlePipelineComplete}
+                topic={topic}
+              />
             </motion.div>
           )}
         </AnimatePresence>

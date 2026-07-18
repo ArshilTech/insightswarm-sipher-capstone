@@ -58,7 +58,10 @@ def generate_pdf_report(markdown_content: str, run_id: str) -> str:
     # Define the output path
     file_path = os.path.join(report_dir, f"{run_id}.pdf")
     
-    # Generate and save the PDF
-    HTML(string=html_template).write_pdf(file_path)
+    # Generate and save the PDF, counting exact pages
+    html_doc = HTML(string=html_template)
+    rendered_doc = html_doc.render()
+    page_count = len(rendered_doc.pages)
+    rendered_doc.write_pdf(file_path)
     
-    return file_path
+    return file_path, page_count

@@ -58,10 +58,11 @@ async def run_research_background(initial_state: ResearchState):
             await session.flush() # Flush to get the new report ID before committing
             
             # Generate PDF report on disk AFTER report is in the database
+            pages_count = 1
             if final_markdown:
                 try:
-                    pdf_path = generate_pdf_report(final_markdown, initial_state['run_id'])
-                    run_logger.info(f"Background task: PDF report generated at {pdf_path}")
+                    pdf_path, pages_count = generate_pdf_report(final_markdown, initial_state['run_id'])
+                    run_logger.info(f"Background task: PDF report generated at {pdf_path} with {pages_count} pages.")
                     
                     # Create the ReportFile record to link the PDF to the report
                     report_file = ReportFile(
@@ -74,6 +75,19 @@ async def run_research_background(initial_state: ResearchState):
                 except Exception as pdf_error:
                     run_logger.error(f"Background task: PDF generation failed: {pdf_error}", exc_info=True)
                     # Continue without PDF, report still has markdown content
+            
+            # Calculate sources count
+            citations = re.findall(r'\[\d+\]', final_markdown)
+            sources_count = len(set(citations)) if citations else 0
+            if sources_count == 0:
+                links = re.findall(r'\[([^\]]+)\]\((https?://[^\)]+)\)', final_markdown)
+                sources_count = len(set(links)) if links else 4
+
+            new_report.content_json = {
+                "raw_markdown": final_markdown,
+                "pages": pages_count,
+                "sources": sources_count
+            }
             
             # Update the database with the final state
             run = await session.get(ResearchRun, initial_state['run_id'])
@@ -185,7 +199,8 @@ async def get_report_metadata(
         "title": report.title,
         "summary": report.summary,
         "file": report.file,
-        "download_url": f"/api/research/{run_id}/download" if report.file else None
+        "download_url": f"/api/research/{run_id}/download" if report.file else None,
+        "content_json": report.content_json
     }
 
     return response_data
@@ -194,6 +209,7 @@ async def get_report_metadata(
 @router.get("/research/{run_id}/download")
 async def download_report_pdf(
     run_id: str,
+    inline: bool = False,
     session: AsyncSession = Depends(get_async_session)
 ):
     # Fetch the report and its associated file
@@ -208,10 +224,10 @@ async def download_report_pdf(
     if not os.path.exists(report_file.file_path):
         raise HTTPException(status_code=500, detail="PDF record exists, but file is missing from disk.")
     
-    # Serve the file for download
+    # Serve the file for download or inline preview
     return FileResponse(
         path=report_file.file_path,
         filename=report_file.filename,
         media_type=report_file.mime_type,
-        content_disposition_type="attachment" # Forces the browser to download rather than display
+        content_disposition_type="inline" if inline else "attachment"
     )
