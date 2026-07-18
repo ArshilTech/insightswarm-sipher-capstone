@@ -514,7 +514,7 @@ with col1:
         <div class="feature-card">
             <div class="card-icon">🤖</div>
             <div class="card-title">Agents Tracker</div>
-            <div class="card-desc">Monitor and trace your multi-agent research pipeline execution in real time. Filter logs by run ID, level, or keywords.</div>
+            <div class="card-desc">Monitor and trace your multi-agent research pipeline execution in real time.</div>
             <a href="/agentstracker" target="_self" class="card-btn">Launch Tracker</a>
         </div>
         """,
@@ -527,7 +527,7 @@ with col2:
         <div class="feature-card">
             <div class="card-icon">🕥</div>
             <div class="card-title">Research History</div>
-            <div class="card-desc">Browse and search through your team's historical research reports, logs, and generated PDF documents.</div>
+            <div class="card-desc">Browse through your team's historical research reports and generated PDF documents.</div>
             <a href="#" class="card-btn">Watch History</a>
         </div>
         """,

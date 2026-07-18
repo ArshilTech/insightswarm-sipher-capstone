@@ -200,7 +200,7 @@ export default function SubmitPage() {
           <line x1="19" y1="12" x2="5" y2="12" />
           <polyline points="12 19 5 12 12 5" />
         </svg>
-        <span>Back to Landing</span>
+        <span>Back to Home</span>
       </motion.a>
 
       <div className="absolute inset-0" style={{ backgroundImage: 'radial-gradient(circle at top left, rgba(34, 211, 238, 0.18), transparent 36%), radial-gradient(circle at bottom right, rgba(13, 148, 136, 0.18), transparent 38%), linear-gradient(135deg, #eafcf9 0%, #e2f8f4 45%, #dcf3ee 100%)' }} />
