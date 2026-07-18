@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-def generate_pdf_report(markdown_content: str, run_id: str) -> str:
+def generate_pdf_report(markdown_content: str, run_id: str) -> tuple[str, int]:
     """Converts Markdown text to a formatted PDF using WeasyPrint."""
     
     # Convert Markdown to HTML
