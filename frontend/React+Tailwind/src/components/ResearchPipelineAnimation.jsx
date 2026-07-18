@@ -2,16 +2,96 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const PIPELINE_STEPS = [
-  { label: 'Initiated', icon: '🚀', detail: 'Research swarm activated' },
-  { label: 'Scraping Sources', icon: '🕸️', detail: 'Crawling the web for data' },
-  { label: 'Searching the Web', icon: '🔍', detail: 'Deep searching relevant content' },
-  { label: 'Collecting Data', icon: '📦', detail: 'Aggregating information streams' },
-  { label: 'Analyzing Patterns', icon: '🧠', detail: 'Neural pattern recognition' },
-  { label: 'Refining Insights', icon: '✨', detail: 'Distilling key findings' },
-  { label: 'Generating Report', icon: '📄', detail: 'Compiling final document' },
+  { label: 'Initiated', icon: 'initiated', detail: 'Research swarm activated' },
+  { label: 'Scraping Sources', icon: 'sources', detail: 'Crawling the web for data' },
+  { label: 'Searching the Web', icon: 'search', detail: 'Deep searching relevant content' },
+  { label: 'Collecting Data', icon: 'collect', detail: 'Aggregating information streams' },
+  { label: 'Analyzing Patterns', icon: 'analyze', detail: 'Neural pattern recognition' },
+  { label: 'Refining Insights', icon: 'refine', detail: 'Distilling key findings' },
+  { label: 'Generating Report', icon: 'report', detail: 'Compiling final document' },
 ];
 
 const STEP_DURATION = 2200; // ms per step
+
+function StepIcon({ type, isActive, isCompleted }) {
+  const stroke = isCompleted || isActive ? '#0f766e' : '#64748b';
+  const fill = isCompleted || isActive ? 'rgba(20, 184, 166, 0.12)' : 'transparent';
+  const commonProps = {
+    width: 16,
+    height: 16,
+    viewBox: '0 0 24 24',
+    fill,
+    stroke,
+    strokeWidth: '1.8',
+    strokeLinecap: 'round',
+    strokeLinejoin: 'round',
+  };
+
+  switch (type) {
+    case 'initiated':
+      return (
+        <svg {...commonProps}>
+          <path d="M4 12h16" />
+          <path d="M12 4v16" />
+          <path d="M6 6l12 12" />
+          <path d="M18 6 6 18" />
+        </svg>
+      );
+    case 'sources':
+      return (
+        <svg {...commonProps}>
+          <rect x="4" y="4" width="16" height="16" rx="2" />
+          <path d="M8 8h8" />
+          <path d="M8 12h6" />
+          <path d="M8 16h4" />
+        </svg>
+      );
+    case 'search':
+      return (
+        <svg {...commonProps}>
+          <circle cx="11" cy="11" r="5" />
+          <path d="m15 15 4 4" />
+        </svg>
+      );
+    case 'collect':
+      return (
+        <svg {...commonProps}>
+          <rect x="4" y="5" width="16" height="14" rx="2" />
+          <path d="M8 9h8" />
+          <path d="M8 13h5" />
+          <path d="M8 17h3" />
+        </svg>
+      );
+    case 'analyze':
+      return (
+        <svg {...commonProps}>
+          <path d="M6 18V10" />
+          <path d="M12 18V6" />
+          <path d="M18 18v-7" />
+        </svg>
+      );
+    case 'refine':
+      return (
+        <svg {...commonProps}>
+          <path d="M7 7h10" />
+          <path d="M7 12h6" />
+          <path d="M7 17h3" />
+          <path d="M16 17l2-2" />
+          <path d="m18 15 1 1" />
+        </svg>
+      );
+    case 'report':
+    default:
+      return (
+        <svg {...commonProps}>
+          <path d="M7 3h7l4 4v14H7z" />
+          <path d="M14 3v4h4" />
+          <path d="M9 12h6" />
+          <path d="M9 16h4" />
+        </svg>
+      );
+  }
+}
 
 export default function ResearchPipelineAnimation({ isActive, onComplete, topic }) {
   const [activeStep, setActiveStep] = useState(-1);
@@ -162,7 +242,17 @@ export default function ResearchPipelineAnimation({ isActive, onComplete, topic 
               {/* Content */}
               <div className={`flex-1 pb-1 transition-all duration-300 ${isPending ? 'opacity-40' : 'opacity-100'}`}>
                 <div className="flex items-center gap-2">
-                  <span className={`text-base ${isPending ? 'grayscale' : ''}`}>{step.icon}</span>
+                  <span
+                    className={`flex h-7 w-7 items-center justify-center rounded-full border transition-all duration-300 ${
+                      isCompleted
+                        ? 'border-teal-200 bg-teal-50/80'
+                        : isCurrentlyActive
+                          ? 'border-teal-300 bg-teal-50/70'
+                          : 'border-slate-200 bg-white/80'
+                    } ${isPending ? 'opacity-70' : 'opacity-100'}`}
+                  >
+                    <StepIcon type={step.icon} isActive={isCurrentlyActive} isCompleted={isCompleted} />
+                  </span>
                   <span
                     className={`text-sm font-semibold transition-colors duration-300 ${
                       isCompleted
