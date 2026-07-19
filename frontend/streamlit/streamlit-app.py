@@ -525,10 +525,10 @@ with col2:
     st.markdown(
         """
         <div class="feature-card">
-            <div class="card-icon">🕥</div>
+           <div class="card-icon">🕥</div>
             <div class="card-title">Research History</div>
             <div class="card-desc">Browse through your team's historical research reports and generated PDF documents.</div>
-            <a href="#" class="card-btn">Watch History</a>
+            <a href="/research-history" class="card-btn">Watch History</a>
         </div>
         """,
         unsafe_allow_html=True,
