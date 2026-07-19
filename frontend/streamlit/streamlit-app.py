@@ -512,44 +512,23 @@ with col1:
     st.markdown(
         """
         <div class="feature-card">
-<<<<<<< HEAD
-            <div class="feature-badge badge-primary">Live Feature</div>
-            <div class="feature-title">🕒 Research History</div>
-            <div class="feature-desc">
-                Your complete archive of autonomous market and academic intelligence.Export your 
-              autonomous research findings.
-            </div>
-                <div class="feature-meta">
-                <span class="small-chip">Research History</span>
-                <span class="small-chip">Researched Data</span>
-                <span class="small-chip">Download</span>
-            </div>
-=======
             <div class="card-icon">🤖</div>
             <div class="card-title">Agents Tracker</div>
             <div class="card-desc">Monitor and trace your multi-agent research pipeline execution in real time.</div>
             <a href="/agentstracker" target="_self" class="card-btn">Launch Tracker</a>
->>>>>>> 6f54aa7c4c73333d200c72e100a13f65cb3cfa44
         </div>
         """,
         unsafe_allow_html=True,
     )
-<<<<<<< HEAD
-    st.markdown("<div class='cta-wrap'>", unsafe_allow_html=True)
-    if st.button("Research History", use_container_width=True, key="research_history_btn"):
-        st.switch_page("pages/research-history.py")
-    st.markdown("</div>", unsafe_allow_html=True)
-=======
->>>>>>> 6f54aa7c4c73333d200c72e100a13f65cb3cfa44
 
 with col2:
     st.markdown(
         """
         <div class="feature-card">
-            <div class="card-icon">🕥</div>
+           <div class="card-icon">🕥</div>
             <div class="card-title">Research History</div>
             <div class="card-desc">Browse through your team's historical research reports and generated PDF documents.</div>
-            <a href="#" class="card-btn">Watch History</a>
+            <a href="/research-history" class="card-btn">Watch History</a>
         </div>
         """,
         unsafe_allow_html=True,

@@ -28,6 +28,10 @@ st.set_page_config(
 # ---------- Styling ----------
 st.markdown(
     """
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    
     <style>
         .stApp {
             background: linear-gradient(135deg, #E7F6F1 0%, #DDF1EA 45%, #D3EDE3 100%);
