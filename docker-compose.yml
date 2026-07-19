@@ -1,0 +1,38 @@
+services:
+  backend:
+    build:
+      context: ..
+      dockerfile: devops/Dockerfile.backend
+    ports:
+      - "8000:8000"
+    env_file:
+      - ../.env
+    volumes:
+      - ../reports:/app/reports
+
+  frontend:
+    build:
+      context: ..
+      dockerfile: devops/Dockerfile.frontend
+    ports:
+      - "5173:5173"
+    depends_on:
+      - backend
+
+  landing:
+    build:
+      context: ..
+      dockerfile: devops/Dockerfile.landing
+    ports:
+      - "3001:3001"
+
+  streamlit:
+    build:
+      context: ..
+      dockerfile: devops/Dockerfile.streamlit
+    ports:
+      - "8501:8501"
+    env_file:
+      - ../.env
+    depends_on:
+      - backend
