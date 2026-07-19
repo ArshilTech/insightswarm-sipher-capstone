@@ -14,7 +14,7 @@ def fetch_history_data():
         st.error("Could not connect to backend. Ensure backend is running.")
     except Exception as e:
         st.error(f"Error fetching history data: {e}")
-    return []
+    return[]
 
 #-----------Page Configuraion----------
 st.set_page_config(
@@ -24,13 +24,14 @@ st.set_page_config(
     initial_sidebar_state="collapsed",
 )
 
-# ---------- Styling ----------
+
+# ---------- Styling (matches landing page theme) ----------
 st.markdown(
     """
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-    
+
     <!-- Shifting Gradient Background Mesh & Texture -->
     <div class="bg-mesh" aria-hidden="true"></div>
     <div class="noise-overlay" aria-hidden="true"></div>
@@ -59,9 +60,9 @@ st.markdown(
             --mint-200: #b8ece2;
             --cyan-400: #22d3ee;
 
-            /* gradients */
             --grad-a: linear-gradient(135deg, #0d9488 0%, #22d3ee 100%);
             --grad-b: linear-gradient(135deg, #115e56 0%, #0d9488 100%);
+            --grad-text: linear-gradient(120deg, #0f766e 0%, #0d9488 45%, #22d3ee 100%);
 
             --radius-sm: 12px;
             --radius-md: 18px;
@@ -78,6 +79,9 @@ st.markdown(
             --shadow-md:
                 0 2px 4px rgba(7, 46, 42, 0.05),
                 0 18px 40px -14px rgba(13, 148, 136, 0.3);
+            --shadow-lg:
+                0 4px 8px rgba(7, 46, 42, 0.06),
+                0 30px 60px -16px rgba(13, 148, 136, 0.32);
             --inset-hi: inset 0 1px 0 rgba(255, 255, 255, 0.85);
         }
 
@@ -113,7 +117,7 @@ st.markdown(
             background-size: 256px 256px;
         }
 
-        /* Override Streamlit container background and default body fonts */
+        /* Force background & font overrides for Streamlit */
         html, body, [data-testid="stApp"], .stApp, [data-testid="stAppViewContainer"] {
             background: var(--bg-0) !important;
             background-attachment: fixed !important;
@@ -124,11 +128,29 @@ st.markdown(
             font-family: var(--font-body) !important;
         }
 
-        /* Fix Streamlit Headers & Footers */
+        /* Fade-in on page load */
+        @keyframes fadeInPage {
+            from { opacity: 0; }
+            to   { opacity: 1; }
+        }
+        .block-container {
+            animation: fadeInPage 0.2s ease-in-out !important;
+            padding-top: 2rem;
+            padding-bottom: 2rem;
+            max-width: 1200px;
+            position: relative;
+            z-index: 10;
+        }
+
+        /* Fix Streamlit headers / footers */
         header[data-testid="stHeader"], .stAppHeader {
             background: transparent !important;
             background-color: transparent !important;
             box-shadow: none !important;
+        }
+
+        [data-testid="stToolbar"] {
+            right: 2rem;
         }
 
         footer, [data-testid="stFooter"] {
@@ -139,18 +161,13 @@ st.markdown(
             display: none !important;
         }
 
-        .block-container {
-            padding-top: 2rem;
-            padding-bottom: 2rem;
-            max-width: 1200px;
-            position: relative;
-            z-index: 10;
-        }
-
+        /* ===== Hero Section ===== */
         .hero {
             text-align: center;
             padding: 1.5rem 1rem 0.75rem 1rem;
             margin-bottom: 1rem;
+            position: relative;
+            z-index: 10;
         }
 
         .hero h1 {
@@ -172,274 +189,201 @@ st.markdown(
             line-height: 1.8;
         }
 
-        .eyebrow {
-            display: inline-block;
-            padding: 0.4rem 0.8rem;
-            border-radius: 999px;
-            background: rgba(13, 148, 136, 0.1);
-            border: 1px solid rgba(13, 148, 136, 0.2);
-            color: var(--teal-600);
-            font-weight: 700;
-            font-size: 0.82rem;
-            letter-spacing: 0.06em;
-            text-transform: uppercase;
-            margin-bottom: 1rem;
-            font-family: var(--font-display) !important;
-        }
-
-        .section-title {
-            color: var(--ink) !important;
-            font-family: var(--font-display) !important;
-            font-weight: 700;
-            font-size: 1.45rem;
-            margin: 0.5rem 0 0.25rem 0;
-        }
-
-        .section-subtitle {
-            color: var(--ink-mute);
-            margin-bottom: 1rem;
-        }
-
-        /* Use semantic surfaces for cards */
-        .metric-card {
-            background: var(--surface);
-            border: 1px solid var(--line);
-            border-radius: var(--radius-md);
-            padding: 1rem 1.1rem;
-            box-shadow: var(--shadow-sm);
-            backdrop-filter: blur(14px);
-        }
-
-        .metric-label {
-            color: var(--ink-soft);
-            font-size: 0.88rem;
-            margin-bottom: 0.25rem;
-        }
-
-        .metric-value {
-            color: var(--ink) !important;
-            font-size: 1.5rem;
-            font-weight: 800;
-            line-height: 1.1;
-        }
-
-        .metric-note {
-            color: var(--ink-soft);
-            font-size: 0.86rem;
-            margin-top: 0.25rem;
-        }
-
-        .feature-card {
-            height: 100%;
-            background: var(--surface);
-            border: 1px solid var(--line);
-            border-radius: var(--radius-lg);
-            padding: 1.35rem;
-            box-shadow: var(--shadow-md);
-            backdrop-filter: blur(16px);
-            transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
-        }
-
-        .feature-card:hover {
-            transform: translateY(-4px);
-            border-color: rgba(13, 148, 136, 0.35);
-            box-shadow: var(--shadow-lg);
-        }
-
-        .feature-badge {
-            display: inline-block;
-            padding: 0.32rem 0.7rem;
-            border-radius: 999px;
-            font-size: 0.75rem;
-            font-weight: 700;
-            margin-bottom: 0.9rem;
-            letter-spacing: 0.04em;
-            text-transform: uppercase;
-        }
-
-        .badge-primary {
-            background: rgba(13, 148, 136, 0.14);
-            color: var(--teal-600);
-            border: 1px solid rgba(13, 148, 136, 0.28);
-        }
-
-        .badge-soon {
-            background: rgba(7, 46, 42, 0.06);
-            color: var(--ink-soft);
-            border: 1px solid rgba(7, 46, 42, 0.12);
-        }
-
-        .feature-title {
-            color: var(--ink) !important;
-            font-size: 1.25rem;
-            font-weight: 800;
-            margin-bottom: 0.35rem;
-            font-family: var(--font-display) !important;
-        }
-
-        .feature-desc {
-            color: var(--ink-soft);
-            line-height: 1.7;
-            font-size: 0.98rem;
-            min-height: 3.3rem;
-        }
-
-        .feature-meta {
-            color: var(--ink-mute);
-            font-size: 0.85rem;
-            margin-top: 0.7rem;
-        }
-
-        .cta-wrap {
-            margin-top: 1rem;
-        }
-
-        .footer-note {
-            text-align: center;
-            color: var(--ink-soft);
-            font-size: 0.9rem;
-            margin-top: 1.5rem;
-            padding-top: 0.8rem;
-        }
-
+        /* ===== Divider ===== */
         .divider {
             height: 1px;
             background: linear-gradient(90deg, transparent, rgba(13, 148, 136, 0.28), transparent);
             margin: 1.25rem 0;
+            position: relative;
+            z-index: 10;
         }
 
-        /* Streamlit Popover styling */
-        div[data-testid="stPopover"] > button, div.stPopover > button {
+        /* ===== History Item Rows (white card badge) ===== */
+        div[data-testid="stHorizontalBlock"] {
+            background: #ffffff !important;
+            border: 1.5px solid rgba(7, 46, 42, 0.08) !important;
+            border-radius: var(--radius-lg) !important;
+            padding: 1.2rem 1.8rem !important;
+            margin-bottom: 1.25rem !important;
+            box-shadow:
+                0 2px 8px rgba(7, 46, 42, 0.04),
+                0 10px 30px -10px rgba(13, 148, 136, 0.14),
+                var(--inset-hi) !important;
+            transition:
+                transform 0.35s cubic-bezier(0.22, 1, 0.36, 1),
+                box-shadow 0.35s cubic-bezier(0.22, 1, 0.36, 1),
+                border-color 0.35s ease !important;
+            position: relative;
+            z-index: 10;
+        }
+
+        div[data-testid="stHorizontalBlock"]:hover {
+            transform: translateY(-6px) scale(1.012) !important;
+            border-color: rgba(13, 148, 136, 0.35) !important;
+            box-shadow:
+                0 6px 16px rgba(7, 46, 42, 0.06),
+                0 24px 48px -12px rgba(13, 148, 136, 0.22),
+                var(--inset-hi) !important;
+        }
+
+        /* ===== Status Badges ===== */
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 999px;
+            font-family: var(--font-mono);
+            font-size: 0.72rem;
+            font-weight: 600;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            margin-bottom: 0.4rem;
+        }
+
+        .badge-success {
+            background: rgba(13, 148, 136, 0.12);
+            color: var(--teal-600);
+            border: 1px solid rgba(13, 148, 136, 0.25);
+        }
+
+        .badge-archived {
+            background: rgba(7, 46, 42, 0.06);
+            color: var(--ink-mute);
+            border: 1px solid var(--line);
+        }
+
+        /* ===== History Title ===== */
+        .history-title {
+            font-family: var(--font-display) !important;
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--ink) !important;
+            letter-spacing: -0.015em;
+            margin-bottom: 0.5rem;
+        }
+
+        /* ===== Meta Info Badges ===== */
+        .history-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            align-items: center;
+            margin-top: 0.5rem;
+        }
+
+        .meta-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            padding: 0.3rem 0.75rem;
+            border-radius: 999px;
+            background: var(--bg-1);
+            border: 1px solid rgba(7, 46, 42, 0.08);
+            font-family: var(--font-mono);
+            font-size: 0.75rem;
+            color: var(--ink-soft);
+            white-space: nowrap;
+            transition: border-color 0.2s ease, background 0.2s ease;
+        }
+
+        .meta-chip:hover {
+            border-color: rgba(13, 148, 136, 0.3);
+            background: rgba(13, 148, 136, 0.06);
+        }
+
+        .meta-chip .meta-label {
+            font-weight: 600;
+            color: var(--teal-700);
+            font-size: 0.68rem;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+        }
+
+        /* ===== Popover / Actions Menu ===== */
+        [data-testid="stPopover"] button {
             background: var(--surface) !important;
             border: 1px solid var(--line) !important;
-            color: var(--ink) !important;
             border-radius: var(--radius-sm) !important;
-            padding: 0.4rem 0.8rem !important;
+            color: var(--ink) !important;
+            font-family: var(--font-display) !important;
+            font-size: 1.2rem !important;
             font-weight: 600 !important;
             box-shadow: var(--shadow-sm) !important;
             transition: transform 0.2s ease, box-shadow 0.2s ease !important;
         }
 
-        div[data-testid="stPopover"] > button:hover, div.stPopover > button:hover {
+        [data-testid="stPopover"] button:hover {
             transform: translateY(-1px) !important;
             box-shadow: var(--shadow-md) !important;
-            border-color: rgba(13, 148, 136, 0.35) !important;
+            border-color: rgba(13, 148, 136, 0.3) !important;
         }
 
-        /* Streamlit Button tweaks */
-        div.stButton > button {
-            width: 100%;
-            border-radius: var(--radius-sm);
-            border: 1px solid rgba(13, 148, 136, 0.35);
-            background: var(--grad-b);
-            color: white;
-            padding: 0.7rem 1rem;
+        [data-testid="stPopoverBody"] {
+            background: var(--surface-solid) !important;
+            border: 1px solid var(--line) !important;
+            border-radius: var(--radius-md) !important;
+            box-shadow: var(--shadow-lg) !important;
+            padding: 0.75rem !important;
+        }
+
+        [data-testid="stPopoverBody"] strong,
+        [data-testid="stPopoverBody"] b {
             font-family: var(--font-display) !important;
-            font-weight: 700;
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
-            box-shadow: var(--shadow-sm);
+            color: var(--ink) !important;
         }
 
-        div.stButton > button:hover {
-            transform: translateY(-1px);
-            box-shadow: var(--shadow-md);
-            border-color: rgba(13, 148, 136, 0.55);
-        }
-
-        /* Streamlit Link Button styling (e.g. View Report, Download PDF) */
-        div.stLinkButton > a {
-            width: 100%;
+        /* ===== Streamlit Info/Error Alerts ===== */
+        [data-testid="stAlert"] {
+            font-family: var(--font-body) !important;
             border-radius: var(--radius-sm) !important;
-            border: 1px solid rgba(13, 148, 136, 0.35) !important;
-            background: var(--grad-b) !important;
-            color: white !important;
-            padding: 0.7rem 1rem !important;
+            position: relative;
+            z-index: 10;
+        }
+
+        /* ===== Link Buttons (inside popover) ===== */
+        [data-testid="stLinkButton"] a {
             font-family: var(--font-display) !important;
-            font-weight: 700 !important;
-            text-align: center !important;
-            text-decoration: none !important;
-            display: inline-block !important;
+            font-weight: 600 !important;
+            border-radius: var(--radius-sm) !important;
             transition: transform 0.2s ease, box-shadow 0.2s ease !important;
-            box-shadow: var(--shadow-sm) !important;
         }
 
-        div.stLinkButton > a:hover {
+        [data-testid="stLinkButton"] a:hover {
             transform: translateY(-1px) !important;
-            box-shadow: var(--shadow-md) !important;
-            border-color: rgba(13, 148, 136, 0.55) !important;
-            color: white !important;
         }
 
-        .soon-button button {
-            background: rgba(7, 46, 42, 0.05) !important;
-            border: 1px solid rgba(7, 46, 42, 0.12) !important;
-            box-shadow: none !important;
-            color: var(--ink-soft) !important;
-        }
-
-        .small-chip {
-            display: inline-block;
-            margin-right: 0.35rem;
-            padding: 0.15rem 0.45rem;
-            border-radius: 999px;
-            background: rgba(13, 148, 136, 0.10);
-            color: var(--teal-600);
-            font-size: 0.75rem;
-            border: 1px solid rgba(13, 148, 136, 0.22);
-        }
-
-        /* Badges for status inside list */
-        .badge {
-            display: inline-block;
-            padding: 0.25rem 0.6rem;
-            border-radius: 999px;
-            font-size: 0.72rem;
-            font-weight: 700;
-            letter-spacing: 0.04em;
-            text-transform: uppercase;
-            font-family: var(--font-mono) !important;
-            margin-bottom: 0.5rem;
-        }
-
-        .badge-success {
-            background: rgba(13, 148, 136, 0.1);
-            color: var(--teal-600);
-            border: 1px solid rgba(13, 148, 136, 0.2);
-        }
-
-        .badge-archived {
-            background: rgba(7, 46, 42, 0.06);
-            color: var(--ink-soft);
-            border: 1px solid rgba(7, 46, 42, 0.12);
-        }
-
-        /* Title and Meta info inside list items */
-        .history-title {
+        /* ===== Back Button ===== */
+        .back-button-wrap + div button,
+        button[data-testid="stBaseButton-secondary"] {
             font-family: var(--font-display) !important;
-            font-size: 1.3rem;
-            font-weight: 600;
-            color: var(--ink);
-            margin: 0.25rem 0;
-            letter-spacing: -0.01em;
+            font-weight: 600 !important;
+            font-size: 0.92rem !important;
+            color: var(--teal-700) !important;
+            background: var(--surface-raised) !important;
+            border: 1px solid var(--line) !important;
+            border-radius: var(--radius-sm) !important;
+            padding: 0.5rem 1rem !important;
+            box-shadow: var(--shadow-sm) !important;
+            transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease !important;
+            position: relative;
+            z-index: 1000;
         }
 
-        .history-meta {
-            font-family: var(--font-mono) !important;
-            font-size: 0.8rem;
-            color: var(--ink-soft);
-            margin-top: 0.4rem;
+        .back-button-wrap + div button:hover,
+        button[data-testid="stBaseButton-secondary"]:hover {
+            transform: translateX(-2px) !important;
+            border-color: rgba(13, 148, 136, 0.3) !important;
+            box-shadow: var(--shadow-md) !important;
         }
 
-        .history-meta b {
-            color: var(--ink);
+        /* ===== Streamlit markdown text overrides ===== */
+        .stMarkdown, .stMarkdown p, .stMarkdown span {
+            font-family: var(--font-body) !important;
+            color: var(--ink) !important;
         }
 
-        .back-button-wrap {
-            position: absolute !important;
-            top: 2rem !important;
-            left: 2rem !important;
-            z-index: 1000 !important;
-            width: auto !important;
+        h1, h2, h3, h4, h5, h6 {
+            font-family: var(--font-display) !important;
+            color: var(--ink) !important;
         }
     </style>
     """,
@@ -453,6 +397,7 @@ st.markdown(
     <h1>Research History</h1>
     <p>Access your past auntonomous research jobs and AI-Generated reports.</p>
     </div>
+    <div class="divider"></div>
 """, unsafe_allow_html=True
 )
 
@@ -465,7 +410,7 @@ if not hisotry_data:
 else: 
     for item in hisotry_data:
         with st.container():
-            col1, col2 = st.columns([11, 1], vertical_alignment="center")
+            col1, col2, col3 = st.columns([8, 2, 2], vertical_alignment="center")
 
             with col1:
                 badge_class = "badge-success" if item["status"] == "Completed" else "badge-archived"
@@ -474,24 +419,20 @@ else:
                         <div class="badge {badge_class}">{item["status"]}</div>
                         <div class="history-title">{item["title"]}</div>
                         <div class="history-meta">
-                            <b>ID:</b> {item["id"]} &nbsp;|&nbsp; 
-                            <b>Generated:</b> {item["date"]} &nbsp;|&nbsp; 
-                            <b>Agents Deployed:</b> {item["agents_used"]}
+                            <span class="meta-chip"><span class="meta-label">ID</span> {item["id"][:8]}…</span>
+                            <span class="meta-chip"><span class="meta-label">Generated</span> {item["date"]}</span>
+                            <span class="meta-chip"><span class="meta-label">Agents</span> {item["agents_used"]}</span>
                         </div>
                     </div>
                     """,
                     unsafe_allow_html=True
                 )
             with col2:
-                #Three dots menu
-                with st.popover("⋮"):
-                    st.markdown("**Actions**")
-
-                    if item["status"] == "Completed":
-                        st.link_button("📄 View Full Report", url=f"http://localhost:5173/report/{item['id']}", use_container_width=True)
-                        st.link_button("⬇️ Download PDF", url=f"http://localhost:8000/api/research/{item['id']}/download", use_container_width=True)
-                    else:
-                        st.info("Report not generated yet or run failed.")
+                if item["status"] == "Completed":
+                    st.link_button("📄 View Report", url=f"http://localhost:5173/report/{item['id']}", use_container_width=True)
+            with col3:
+                if item["status"] == "Completed":
+                    st.link_button("⬇️ Download PDF", url=f"http://localhost:8000/api/research/{item['id']}/download", use_container_width=True)
 
 st.write("")
 
