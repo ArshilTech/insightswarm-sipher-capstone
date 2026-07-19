@@ -158,7 +158,7 @@ st.markdown(
         }
 
         [data-testid="stSidebar"] {
-            display: none !important;
+            display: none;
         }
 
         /* ===== Hero Section ===== */
@@ -171,20 +171,18 @@ st.markdown(
         }
 
         .hero h1 {
-            font-family: var(--font-display) !important;
-            font-size: 3.2rem;
+            font-size: 3rem;
             line-height: 1.1;
-            margin-bottom: 0.5rem;
-            color: var(--ink) !important;
-            font-weight: 700;
+            margin-bottom: 0.35rem;
+            color: #0F2A22;
+            font-weight: 800;
             letter-spacing: -0.03em;
         }
 
         .hero p {
-            font-family: var(--font-body) !important;
             max-width: 900px;
             margin: 0 auto;
-            color: var(--ink-soft) !important;
+            color: #4B5D57;
             font-size: 1.05rem;
             line-height: 1.8;
         }
@@ -192,7 +190,7 @@ st.markdown(
         /* ===== Divider ===== */
         .divider {
             height: 1px;
-            background: linear-gradient(90deg, transparent, rgba(13, 148, 136, 0.28), transparent);
+            background: linear-gradient(90deg, transparent, rgba(15, 118, 110, 0.28), transparent);
             margin: 1.25rem 0;
             position: relative;
             z-index: 10;
