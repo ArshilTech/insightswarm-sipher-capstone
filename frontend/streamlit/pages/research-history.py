@@ -1,8 +1,12 @@
+from pathlib import Path
+
 import streamlit as st
 import requests
 
 #--------Backend API Config---------
 BACKEND_URL = "http://localhost:8000/api/research"
+
+FAVICON_PATH = Path(__file__).resolve().parent.parent / "favicon.svg"
 
 #----Helper functions for API call---------
 def fetch_history_data():
@@ -18,8 +22,8 @@ def fetch_history_data():
 
 #-----------Page Configuraion----------
 st.set_page_config(
-    page_title="InsightSwarm | Research History",
-    page_icon="🕒",
+    page_title="InsightSwarm - Research History",
+    page_icon=str(FAVICON_PATH),
     layout="wide",
     initial_sidebar_state="collapsed",
 )
