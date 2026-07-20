@@ -9,11 +9,52 @@ load_dotenv()
 
 # Add GTK dll path for WeasyPrint on Windows
 if os.name == 'nt':
-    gtk_paths = [
-        r"C:\Users\Abad\AppData\Local\Microsoft\WinGet\Packages\wingtk.gvsbuild.GTK4_Microsoft.Winget.Source_8wekyb3d8bbwe\bin",
-        r"C:\Program Files\Microsoft Power BI Desktop\bin",
-        r"C:\Program Files\Microsoft OneDrive\26.119.0622.0003"
-    ]
+    gtk_paths = []
+    
+    # 0. Custom GTK_PATH environment override if defined
+    gtk_env_override = os.environ.get("GTK_PATH")
+    if gtk_env_override:
+        gtk_paths.append(gtk_env_override)
+        
+    # 1. WinGet GTK package under current user profile AppData
+    local_app_data = os.environ.get("LOCALAPPDATA")
+    if local_app_data:
+        winget_path = os.path.join(
+            local_app_data, 
+            "Microsoft", 
+            "WinGet", 
+            "Packages", 
+            "wingtk.gvsbuild.GTK4_Microsoft.Winget.Source_8wekyb3d8bbwe", 
+            "bin"
+        )
+        gtk_paths.append(winget_path)
+        
+    # 2. Standard GTK installers paths
+    gtk_paths.append(r"C:\Program Files\GTK3-Runtime_64bit\bin")
+    gtk_paths.append(r"C:\Program Files\GTK-Runtime\bin")
+    
+    # 3. Microsoft Power BI Desktop
+    gtk_paths.append(r"C:\Program Files\Microsoft Power BI Desktop\bin")
+    
+    # 4. Dynamic OneDrive paths (scan versioned subdirectories)
+    onedrive_base = r"C:\Program Files\Microsoft OneDrive"
+    if os.path.exists(onedrive_base):
+        try:
+            for item in os.listdir(onedrive_base):
+                item_path = os.path.join(onedrive_base, item)
+                if os.path.isdir(item_path) and re.match(r'^\d+(\.\d+)+$', item):
+                    gtk_paths.append(item_path)
+        except Exception:
+            pass
+
+    # 5. Scan system PATH variable dynamically for any folder containing GTK DLLs
+    system_path = os.environ.get("PATH", "")
+    for p in system_path.split(os.pathsep):
+        p_clean = p.strip('"')  # Remove surrounding quotes if present
+        if p_clean and os.path.exists(p_clean):
+            if os.path.exists(os.path.join(p_clean, "gobject-2.0-0.dll")) or os.path.exists(os.path.join(p_clean, "libgobject-2.0-0.dll")):
+                gtk_paths.append(p_clean)
+
     for path in gtk_paths:
         if os.path.exists(path):
             os.environ["PATH"] = path + os.pathsep + os.environ["PATH"]
@@ -21,7 +62,7 @@ if os.name == 'nt':
                 os.add_dll_directory(path)
             except AttributeError:
                 pass
-            # We don't break immediately in case multiple paths are needed, but normally one is fine
+            # Normally loading one valid path is enough, but we update the PATH for all candidates
             
 from weasyprint import HTML
 
