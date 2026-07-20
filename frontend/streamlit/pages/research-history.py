@@ -1,10 +1,14 @@
 from pathlib import Path
-
+import os
 import streamlit as st
 import requests
 
 #--------Backend API Config---------
-BACKEND_URL = "http://localhost:8000/api/research"
+BACKEND_URL = os.getenv(
+    "BACKEND_URL",
+    "http://localhost:8000/api/research"
+)
+
 
 FAVICON_PATH = Path(__file__).resolve().parent.parent / "favicon.svg"
 

@@ -1,19 +1,35 @@
+version: "3.9"
+
 services:
   backend:
+    image: insightswarm-python:latest
     build:
       context: ..
-      dockerfile: devops/Dockerfile.backend
+      dockerfile: devops/Dockerfile.python
+
+    command: >
+      uv run uvicorn app.main:app
+      --host 0.0.0.0
+      --port 8000
+
     ports:
       - "8000:8000"
+
     env_file:
       - ../.env
+
+    volumes:
+      - logs:/app/logs
+      - reports:/app/reports
 
   frontend:
     build:
       context: ..
       dockerfile: devops/Dockerfile.frontend
+
     ports:
       - "5173:5173"
+
     depends_on:
       - backend
 
@@ -21,16 +37,35 @@ services:
     build:
       context: ..
       dockerfile: devops/Dockerfile.landing
+
     ports:
       - "3001:3001"
 
   streamlit:
-    build:
-      context: ..
-      dockerfile: devops/Dockerfile.streamlit
-    ports:
-      - "8501:8501"
-    env_file:
-      - ../.env
+    image: insightswarm-python:latest
+
+    command: >
+      uv run streamlit run
+      frontend/streamlit/streamlit-app.py
+      --server.port=8501
+      --server.address=0.0.0.0
+
     depends_on:
       - backend
+
+    env_file:
+      - ../.env
+
+    environment:
+      BACKEND_URL: http://backend:8000/api/research
+
+    ports:
+      - "8501:8501"
+
+    volumes:
+      - logs:/app/logs
+      - reports:/app/reports
+
+volumes:
+  logs:
+  reports:
