@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import ResearchHeroAnimation from '../components/ResearchHeroAnimation';
 import ResearchPipelineAnimation from '../components/ResearchPipelineAnimation';
 import { LoadingSpinner } from '../components/Feedback';
+import { checkQuery } from '../utils/keywordFilter';
 
 const API_BASE = 'http://127.0.0.1:8000/api';
 
@@ -76,7 +77,7 @@ const LANDING_URL = import.meta.env.VITE_LANDING_URL || 'http://localhost:3001';
 export default function SubmitPage() {
   const navigate = useNavigate();
   const [topic, setTopic] = useState('');
-  
+
   const handleBackToLanding = (e) => {
     if (window.opener) {
       e.preventDefault();
@@ -94,18 +95,36 @@ export default function SubmitPage() {
   const [error, setError] = useState('');
   const [formFocused, setFormFocused] = useState(false);
   const [charCount, setCharCount] = useState(0);
+  const [validationError, setValidationError] = useState('');
+  const [contentValid, setContentValid] = useState(true);
   const formRef = useRef(null);
+
+  const validateContent = (topicValue, instructionsValue) => {
+    const result = checkQuery(topicValue, instructionsValue);
+    setContentValid(result.allowed);
+    setValidationError(result.reason);
+  };
+
+  const handleTopicChange = (e) => {
+    const newTopic = e.target.value;
+    setTopic(newTopic);
+    validateContent(newTopic, instructions);
+  };
 
   const handleInstructionsChange = (e) => {
     const val = e.target.value;
     setInstructions(val);
     setCharCount(val.length);
+    validateContent(topic, val);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!topic.trim()) {
       setError('Please enter a research topic');
+      return;
+    }
+    if (!contentValid) {
       return;
     }
 
@@ -273,7 +292,7 @@ export default function SubmitPage() {
                     id="topic-input"
                     type="text"
                     value={topic}
-                    onChange={(e) => setTopic(e.target.value)}
+                    onChange={handleTopicChange}
                     onFocus={() => setFormFocused(true)}
                     onBlur={() => setFormFocused(false)}
                     placeholder="e.g., Impact of quantum computing on cryptography"
@@ -311,6 +330,21 @@ export default function SubmitPage() {
                 </motion.div>
 
                 <AnimatePresence>
+                  {!contentValid && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0, y: -8 }}
+                      animate={{ opacity: 1, height: 'auto', y: 0 }}
+                      exit={{ opacity: 0, height: 0, y: -8 }}
+                      transition={{ duration: 0.25 }}
+                      className="flex items-center gap-3 rounded-2xl border border-rose-200 bg-rose-50/90 px-4 py-3"
+                    >
+                      <span className="text-base">⚠️</span>
+                      <span className="text-sm font-medium text-rose-600">{validationError}</span>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
+                <AnimatePresence>
                   {error && (
                     <motion.div
                       initial={{ opacity: 0, height: 0, y: -8 }}
@@ -329,9 +363,9 @@ export default function SubmitPage() {
                   <motion.button
                     type="submit"
                     className="flex w-full items-center justify-center gap-3 rounded-2xl bg-linear-to-r from-teal-600 via-teal-500 to-cyan-400 px-6 py-3.5 font-semibold text-slate-900 shadow-[0_16px_35px_-12px_rgba(13,148,136,0.45)] transition duration-300 hover:-translate-y-0.5 hover:shadow-[0_20px_40px_-14px_rgba(13,148,136,0.55)] disabled:cursor-not-allowed disabled:opacity-60"
-                    disabled={loading || !topic.trim()}
-                    whileHover={!loading && topic.trim() ? { scale: 1.015 } : {}}
-                    whileTap={!loading && topic.trim() ? { scale: 0.985 } : {}}
+                    disabled={loading || !topic.trim() || !contentValid}
+                    whileHover={!loading && topic.trim() && contentValid ? { scale: 1.015 } : {}}
+                    whileTap={!loading && topic.trim() && contentValid ? { scale: 0.985 } : {}}
                   >
                     {loading ? (
                       <>
