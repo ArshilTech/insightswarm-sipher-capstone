@@ -85,23 +85,6 @@ export default function ReportPage() {
     return url ? `${url}?inline=true` : ''
   }
 
-  const getSourcesCount = () => {
-    if (report?.content_json?.sources !== undefined && report.content_json.sources !== null) {
-      return report.content_json.sources
-    }
-    const md = report?.content_json?.raw_markdown || ''
-    const citations = md.match(/\[\d+\]/g)
-    if (citations) {
-      const uniqueCitations = new Set(citations.map(c => c.slice(1, -1)))
-      if (uniqueCitations.size > 0) return uniqueCitations.size
-    }
-    const links = md.match(/\[([^\]]+)\]\((https?:\/\/[^\)]+)\)/g)
-    if (links) {
-      return new Set(links).size
-    }
-    return 4 // fallback default
-  }
-
   const getPagesCount = () => {
     if (report?.content_json?.pages !== undefined && report.content_json.pages !== null) {
       return report.content_json.pages
@@ -248,11 +231,7 @@ export default function ReportPage() {
             <h2 className="text-[10px] font-bold tracking-widest text-slate-400 uppercase font-mono">
               Document Analytics
             </h2>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="rounded-xl border border-slate-100 bg-slate-50/50 p-4">
-                <p className="font-mono text-[10px] text-slate-500 uppercase">Sources</p>
-                <p className="mt-1 text-2xl font-bold text-slate-900">{getSourcesCount()}</p>
-              </div>
+            <div className="grid grid-cols-1 gap-3">
               <div className="rounded-xl border border-slate-100 bg-slate-50/50 p-4">
                 <p className="font-mono text-[10px] text-slate-500 uppercase">Pages</p>
                 <p className="mt-1 text-2xl font-bold text-slate-900">{getPagesCount()}</p>
