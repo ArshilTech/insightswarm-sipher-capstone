@@ -16,7 +16,7 @@ RUN apt-get update && apt-get install -y \
     libharfbuzz0b \
     libfribidi0 \
     && rm -rf /var/lib/apt/lists/*
-COPY pyproject.toml .python-version ./
+COPY pyproject.toml uv.lock ./
 
 RUN pip install uv
 

@@ -2,7 +2,7 @@ FROM python:3.11-slim-bookworm
 
 WORKDIR /app
 
-COPY pyproject.toml .python-version ./
+COPY pyproject.toml uv.lock ./
 
 RUN pip install uv
 
