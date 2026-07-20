@@ -377,18 +377,57 @@ def extract_cover_data(markdown_content: str) -> tuple[dict, str]:
                 k, v = line.split(":", 1)
                 k = k.strip().lower()
                 v = v.strip()
+                # Clean up markdown asterisks from values
+                v = re.sub(r'\*\*|\*', '', v)
                 if k in cover_data:
                     cover_data[k] = v
         remaining = markdown_content.replace(cover_match.group(0), "").strip()
     else:
         h1_match = re.search(r"^#\s+(.*)", markdown_content)
         if h1_match:
-            cover_data["title"] = h1_match.group(1).strip()
+            cover_data["title"] = re.sub(r'\*\*|\*', '', h1_match.group(1).strip())
         remaining = markdown_content
         
     return cover_data, remaining
 
+def convert_headings(html_content: str) -> str:
+    # Convert numbered h2 headings (e.g. 1. Introduction) to h1
+    html_content = re.sub(
+        r'<h2([^>]*)>\s*(\d+)\.\s+(.*?)</h2\s*>',
+        r'<h1\1>\2. \3</h1>',
+        html_content,
+        flags=re.IGNORECASE
+    )
+    # Convert References h2 heading to h1
+    html_content = re.sub(
+        r'<h2([^>]*)>\s*References\s*</h2\s*>',
+        r'<h1\1>References</h1>',
+        html_content,
+        flags=re.IGNORECASE
+    )
+    return html_content
+
 def process_toc(html_content: str) -> str:
+    # Case A: Markdown list starts with Table of Contents link (common when no header exists in MD)
+    toc_pattern = r'<ul>\s*<li><a href="#table-of-contents">Table of Contents</a></li>(.*?)</ul>'
+    match = re.search(toc_pattern, html_content, flags=re.DOTALL | re.IGNORECASE)
+    if match:
+        toc_body = match.group(1)
+        items = re.findall(r'<li><a href="([^"]+)">([^<]+)</a></li>', toc_body)
+        filtered_items = []
+        for href, text in items:
+            text_clean = text.strip()
+            if re.match(r'^\d+\.', text_clean) or text_clean.lower() == "references":
+                filtered_items.append(f'<li><a href="{href}"><span>{text_clean}</span></a></li>')
+        
+        new_toc_html = f'<h2 id="table-of-contents">Table of Contents</h2>\n<ul class="toc-list">\n'
+        new_toc_html += "\n".join(filtered_items)
+        new_toc_html += "\n</ul>"
+        
+        html_content = html_content.replace(match.group(0), new_toc_html)
+        return html_content
+        
+    # Case B: Already has Table of Contents header, followed by <ul>
     pattern = r'(<h[12][^>]*>Table of Contents</h[12]>)\s*<ul>'
     html_content = re.sub(pattern, r'\1\n<ul class="toc-list">', html_content, flags=re.IGNORECASE)
     
@@ -470,6 +509,17 @@ def generate_pdf_report(markdown_content: str, run_id: str) -> tuple[str, int]:
     body_markdown = ensure_markdown_spacing(body_markdown)
     body_markdown = process_charts(body_markdown)
     raw_html = markdown.markdown(body_markdown, extensions=['tables', 'fenced_code'])
+    
+    # Remove KPI Dashboard heading entirely to match Demo design (where the cards render below TOC directly)
+    raw_html = re.sub(r'<h[12][^>]*>.*?KPI Dashboard.*?</h[12]>\s*', '', raw_html, flags=re.IGNORECASE)
+    
+    # Strip markdown asterisks inside HTML spans (like KPI card titles)
+    raw_html = re.sub(r'(<span[^>]*>\s*)\*\*(.*?)\*\*(\s*</span>)', r'\1\2\3', raw_html)
+    raw_html = re.sub(r'(<span[^>]*>\s*)\*(.*?)\*(\s*</span>)', r'\1\2\3', raw_html)
+    
+    # Convert main numbered headings & References to h1
+    raw_html = convert_headings(raw_html)
+    
     raw_html = process_toc(raw_html)
     raw_html = inject_page_breaks(raw_html)
     
