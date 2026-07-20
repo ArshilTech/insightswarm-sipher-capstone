@@ -105,7 +105,8 @@ git merge main
 
 Once you've finished adding your features and resolved any merge conflicts, commit and push your changes:
 
-```bash
+```bash 
+
 git add .
 git commit -m "Your message"
 git push origin <yourBranchName>
