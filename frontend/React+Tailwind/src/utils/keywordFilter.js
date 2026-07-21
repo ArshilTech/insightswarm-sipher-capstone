@@ -1,23 +1,27 @@
 const BLOCKED_KEYWORDS = [
-  "bomb",
-  "explosive",
-  "terrorist",
-  "terrorism",
+  // Violence
   "kill",
   "murder",
-  "suicide",
-  "self-harm",
-  "gun",
+  "bomb",
   "weapon",
-  "cocaine",
-  "heroin",
-  "meth",
-  "drug trafficking",
+
+  // Cybercrime
+  "hack",
+  "phishing",
   "malware",
   "ransomware",
-  "phishing",
-  "ddos",
-  "credit card fraud"
+
+  // Fraud
+  "steal",
+  "credit card fraud",
+
+  // Self-harm
+  "suicide",
+  "self-harm",
+
+  // Drugs
+  "cocaine",
+  "heroin"
 ];
 
 export function checkQuery(topic = "", instructions = "") {
