@@ -64,9 +64,101 @@ if os.name == 'nt':
                 pass
             # Normally loading one valid path is enough, but we update the PATH for all candidates
             
+import hashlib
 from weasyprint import HTML
 
-# --- Helper Functions for SVG Chart Generation ---
+# --- Professional Color Palettes for Analytics ---
+
+COLOR_PALETTES = [
+    {
+        "name": "Teal & Emerald",
+        "primary": "#0d9488",
+        "secondary": "#10b981",
+        "kpi_bg": "#f0fdfa",
+        "kpi_border": "#ccfbf1",
+        "chart_colors": ["#0d9488", "#6366f1", "#0f766e", "#fb7185", "#f59e0b", "#10b981", "#3b82f6"]
+    },
+    {
+        "name": "Sapphire & Slate",
+        "primary": "#2563eb",
+        "secondary": "#0284c7",
+        "kpi_bg": "#eff6ff",
+        "kpi_border": "#bfdbfe",
+        "chart_colors": ["#2563eb", "#0284c7", "#3b82f6", "#06b6d4", "#6366f1", "#4f46e5", "#0891b2"]
+    },
+    {
+        "name": "Violet & Indigo",
+        "primary": "#7c3aed",
+        "secondary": "#4f46e5",
+        "kpi_bg": "#f5f3ff",
+        "kpi_border": "#ddd6fe",
+        "chart_colors": ["#7c3aed", "#4f46e5", "#9333ea", "#2563eb", "#c026d3", "#0284c7", "#6366f1"]
+    },
+    {
+        "name": "Forest Emerald & Cyan",
+        "primary": "#059669",
+        "secondary": "#0891b2",
+        "kpi_bg": "#ecfdf5",
+        "kpi_border": "#a7f3d0",
+        "chart_colors": ["#059669", "#0891b2", "#10b981", "#3b82f6", "#d97706", "#4f46e5", "#059669"]
+    },
+    {
+        "name": "Warm Amber & Terracotta",
+        "primary": "#d97706",
+        "secondary": "#ea580c",
+        "kpi_bg": "#fffbeb",
+        "kpi_border": "#fde68a",
+        "chart_colors": ["#d97706", "#ea580c", "#dc2626", "#ca8a04", "#059669", "#2563eb", "#7c3aed"]
+    },
+    {
+        "name": "Crimson Rose & Magenta",
+        "primary": "#e11d48",
+        "secondary": "#9333ea",
+        "kpi_bg": "#fff1f2",
+        "kpi_border": "#fecdd3",
+        "chart_colors": ["#e11d48", "#9333ea", "#2563eb", "#f59e0b", "#10b981", "#0284c7", "#c026d3"]
+    },
+    {
+        "name": "Midnight Cobalt & Cyan",
+        "primary": "#4338ca",
+        "secondary": "#06b6d4",
+        "kpi_bg": "#eef2ff",
+        "kpi_border": "#c7d2fe",
+        "chart_colors": ["#4338ca", "#06b6d4", "#3b82f6", "#8b5cf6", "#10b981", "#f59e0b", "#ec4899"]
+    },
+    {
+        "name": "Ocean Sky & Teal",
+        "primary": "#0284c7",
+        "secondary": "#0d9488",
+        "kpi_bg": "#f0f9ff",
+        "kpi_border": "#bae6fd",
+        "chart_colors": ["#0284c7", "#0d9488", "#2563eb", "#10b981", "#7c3aed", "#f59e0b", "#06b6d4"]
+    },
+    {
+        "name": "Dark Cyan & Emerald",
+        "primary": "#0891b2",
+        "secondary": "#10b981",
+        "kpi_bg": "#ecfeff",
+        "kpi_border": "#a5f3fc",
+        "chart_colors": ["#0891b2", "#10b981", "#6366f1", "#e11d48", "#f59e0b", "#2563eb", "#059669"]
+    },
+    {
+        "name": "Bronze Gold & Ochre",
+        "primary": "#b45309",
+        "secondary": "#d97706",
+        "kpi_bg": "#fffbe6",
+        "kpi_border": "#fef08a",
+        "chart_colors": ["#b45309", "#d97706", "#475569", "#0f766e", "#334155", "#1e293b", "#0284c7"]
+    }
+]
+
+def get_palette_for_run(run_id: str) -> dict:
+    if not run_id:
+        return COLOR_PALETTES[0]
+    hash_val = int(hashlib.md5(run_id.encode('utf-8')).hexdigest(), 16)
+    return COLOR_PALETTES[hash_val % len(COLOR_PALETTES)]
+
+# --- Helper Functions for SVG Chart & Diagram Generation ---
 
 def get_donut_path(cx, cy, r_out, r_in, start_angle, end_angle):
     # Convert angles to radians (0 degrees is top, rotating clockwise)
@@ -94,7 +186,208 @@ def get_donut_path(cx, cy, r_out, r_in, start_angle, end_angle):
     path += "Z"
     return path
 
-def draw_bar_chart(title, labels, values, x_label, y_label):
+def wrap_text_to_lines(text: str, max_chars: int = 65) -> list[str]:
+    """Wraps long text strings into clean multi-line segments to prevent box overflow in SVG."""
+    words = text.split()
+    if not words:
+        return []
+    lines = []
+    current_line = []
+    current_length = 0
+    for word in words:
+        if len(word) > max_chars:
+            word = word[:max_chars - 3] + "..."
+        if current_length + len(word) + (1 if current_line else 0) <= max_chars:
+            current_line.append(word)
+            current_length += len(word) + (1 if len(current_line) > 1 else 0)
+        else:
+            if current_line:
+                lines.append(" ".join(current_line))
+            current_line = [word]
+            current_length = len(word)
+    if current_line:
+        lines.append(" ".join(current_line))
+    return lines
+
+def draw_block_diagram(diagram_data: dict, palette: dict = None) -> str:
+    if palette is None:
+        palette = COLOR_PALETTES[0]
+        
+    title = diagram_data.get("title", "Hierarchical Architecture & Process Workflow")
+    nodes = diagram_data.get("nodes", [])
+    connections = diagram_data.get("connections", [])
+    
+    if not nodes:
+        return "<!-- Empty diagram nodes -->"
+        
+    svg_width = 650
+    header_h = 55
+    gap_y = 30  # Vertical spacing between nodes
+    
+    primary = palette.get("primary", "#0d9488")
+    kpi_bg = palette.get("kpi_bg", "#f0fdfa")
+    kpi_border = palette.get("kpi_border", "#ccfbf1")
+    marker_id = f"arrow-{primary.replace('#', '')}"
+    
+    # Pre-calculate node levels, heights, and positions
+    node_details = []
+    current_y = header_h
+    node_id_map = {}
+    
+    for i, node in enumerate(nodes):
+        node_id = node.get("id", f"node_{i}")
+        heading = node.get("heading") or node.get("label") or node.get("title") or f"Component {i+1}"
+        bullets_raw = node.get("bullet_points") or node.get("items") or node.get("details")
+        
+        if not bullets_raw:
+            subtext = node.get("subtext") or node.get("description") or node.get("desc") or ""
+            if subtext:
+                bullets_raw = [s.strip() for s in subtext.split("\n") if s.strip()]
+            else:
+                bullets_raw = []
+        elif isinstance(bullets_raw, str):
+            bullets_raw = [s.strip() for s in bullets_raw.split("\n") if s.strip()]
+            
+        # Determine hierarchy level (default: level 1 or derived from parent_id / level key)
+        level = int(node.get("level", 1))
+        parent_id = node.get("parent") or node.get("parent_id")
+        if parent_id and parent_id in node_id_map:
+            level = node_id_map[parent_id]["level"] + 1
+            
+        level = min(3, max(1, level))  # Max 3 levels
+        
+        # Calculate indent and width based on hierarchy level
+        indent_x = 65 + (level - 1) * 35
+        node_w = 520 - (level - 1) * 35
+        
+        # Wrap bullets into lines to guarantee text NEVER overflows
+        processed_bullets = []
+        total_text_lines = 0
+        max_chars_for_width = int((node_w - 45) / 7.2)
+        
+        for item in bullets_raw[:4]:
+            wrapped = wrap_text_to_lines(str(item), max_chars=max_chars_for_width)
+            if wrapped:
+                processed_bullets.append(wrapped)
+                total_text_lines += len(wrapped)
+                
+        line_count = max(1, total_text_lines)
+        node_h = max(68, 36 + line_count * 17)
+        
+        detail = {
+            "id": node_id,
+            "index": i + 1,
+            "level": level,
+            "parent_id": parent_id,
+            "heading": heading,
+            "bullets": processed_bullets,
+            "x": indent_x,
+            "w": node_w,
+            "y": current_y,
+            "h": node_h,
+            "cx": indent_x + node_w / 2,
+            "cy": current_y + node_h / 2
+        }
+        
+        node_details.append(detail)
+        node_id_map[node_id] = detail
+        current_y += node_h + gap_y
+        
+    svg_height = int(current_y - gap_y + 25)
+    
+    # Map connections
+    connection_map = {}
+    for conn in connections:
+        from_id = conn.get("from")
+        if from_id:
+            connection_map[from_id] = conn.get("label", "")
+            
+    svg = f'<svg viewBox="0 0 {svg_width} {svg_height}" width="100%" height="{svg_height}" class="chart-diagram" xmlns="http://www.w3.org/2000/svg">\n'
+    svg += '  <defs>\n'
+    svg += f'    <marker id="{marker_id}" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">\n'
+    svg += f'      <path d="M 0 0 L 10 5 L 0 10 z" fill="{primary}" />\n'
+    svg += '    </marker>\n'
+    svg += '  </defs>\n'
+    svg += '  <style>\n'
+    svg += '    .d-title { font-family: "Space Grotesk", "Helvetica Neue", sans-serif; font-size: 18px; font-weight: 700; fill: #0f172a; }\n'
+    svg += f'    .d-heading {{ font-family: "Space Grotesk", "Helvetica Neue", sans-serif; font-size: 13px; font-weight: 700; fill: {primary}; }}\n'
+    svg += f'    .d-badge {{ font-family: "Space Grotesk", "Helvetica Neue", sans-serif; font-size: 9px; font-weight: 700; fill: #ffffff; }}\n'
+    svg += '    .d-body { font-family: "Inter", "Helvetica Neue", sans-serif; font-size: 10.5px; fill: #334155; }\n'
+    svg += f'    .d-conn-label {{ font-family: "Inter", "Helvetica Neue", sans-serif; font-size: 9px; fill: {primary}; font-weight: 600; text-anchor: middle; }}\n'
+    svg += '    .d-conn-bg { fill: #ffffff; opacity: 0.95; }\n'
+    svg += '  </style>\n'
+    
+    # Centered Title at top
+    svg += f'  <text x="{svg_width/2}" y="30" class="d-title" text-anchor="middle">{title}</text>\n'
+    
+    # Draw Nodes & Connectors
+    for i, item in enumerate(node_details):
+        nx = item["x"]
+        ny = item["y"]
+        nw = item["w"]
+        nh = item["h"]
+        heading = item["heading"]
+        bullets = item["bullets"]
+        level = item["level"]
+        parent_id = item["parent_id"]
+        
+        # Rounded rectangle box with level-based styling
+        stroke_w = 1.5 if level == 1 else 1.2
+        svg += f'  <rect x="{nx}" y="{ny}" width="{nw}" height="{nh}" rx="8" ry="8" fill="{kpi_bg}" stroke="{primary}" stroke-width="{stroke_w}" />\n'
+        
+        # Step / Phase Badge
+        badge_text = f"PHASE {item['index']}" if level == 1 else f"LEVEL {level}"
+        badge_w = len(badge_text) * 5.5 + 10
+        svg += f'  <rect x="{nx + nw - badge_w - 12}" y="{ny + 10}" width="{badge_w}" height="14" rx="4" fill="{primary}" />\n'
+        svg += f'  <text x="{nx + nw - badge_w/2 - 12}" y="{ny + 20.5}" class="d-badge" text-anchor="middle">{badge_text}</text>\n'
+        
+        # Bold Heading
+        svg += f'  <text x="{nx + 18}" y="{ny + 22}" class="d-heading">{heading}</text>\n'
+        
+        # Wrapped Bullet Points / Descriptions
+        text_y = ny + 40
+        for b_group in bullets:
+            for line_idx, line in enumerate(b_group):
+                prefix = "• " if line_idx == 0 else "  "
+                svg += f'  <text x="{nx + 22}" y="{text_y}" class="d-body">{prefix}{line}</text>\n'
+                text_y += 17
+                
+        # Vertical Downward Connector Arrow to Next Node
+        if i < len(node_details) - 1:
+            next_item = node_details[i + 1]
+            
+            # Check if branching from explicit parent or sequential vertical flow
+            if parent_id and parent_id in node_id_map:
+                p_item = node_id_map[parent_id]
+                x1 = p_item["x"] + 20
+                y1 = p_item["y"] + p_item["h"]
+                x2 = nx + 20
+                y2 = ny
+                svg += f'  <path d="M {x1} {y1} V {ny - 15} H {x2} V {y2}" fill="none" stroke="{primary}" stroke-width="1.2" stroke-dasharray="3,3" marker-end="url(#{marker_id})" />\n'
+            else:
+                y1 = ny + nh
+                y2 = next_item["y"]
+                conn_x = nx + nw / 2 if nw == next_item["w"] else svg_width / 2
+                
+                conn_label = connection_map.get(item["id"], "")
+                if not conn_label and i < len(connections):
+                    conn_label = connections[i].get("label", "")
+                    
+                svg += f'  <line x1="{conn_x}" y1="{y1}" x2="{conn_x}" y2="{y2}" stroke="{primary}" stroke-width="1.5" marker-end="url(#{marker_id})" />\n'
+                
+                if conn_label:
+                    mid_y = y1 + (gap_y / 2)
+                    label_len = len(conn_label) * 6.5 + 14
+                    svg += f'  <rect x="{conn_x - label_len/2}" y="{mid_y - 9}" width="{label_len}" height="15" rx="3" class="d-conn-bg" stroke="{kpi_border}" stroke-width="0.8" />\n'
+                    svg += f'  <text x="{conn_x}" y="{mid_y + 2}" class="d-conn-label">{conn_label}</text>\n'
+                    
+    svg += '</svg>\n'
+    return svg
+
+def draw_bar_chart(title, labels, values, x_label, y_label, palette: dict = None):
+    if palette is None:
+        palette = COLOR_PALETTES[0]
+        
     svg_width = 650
     svg_height = 340
     margin_left = 70
@@ -117,7 +410,7 @@ def draw_bar_chart(title, labels, values, x_label, y_label):
         grid_max = 1.0
         
     num_ticks = 4
-    colors = ["#0d9488", "#6366f1", "#0f766e", "#fb7185", "#f59e0b", "#10b981", "#3b82f6"]
+    colors = palette.get("chart_colors", ["#0d9488", "#6366f1", "#0f766e", "#fb7185", "#f59e0b", "#10b981", "#3b82f6"])
     
     svg = f'<svg viewBox="0 0 {svg_width} {svg_height}" width="100%" height="{svg_height}" class="chart-bar" xmlns="http://www.w3.org/2000/svg">\n'
     svg += '  <style>\n'
@@ -173,7 +466,10 @@ def draw_bar_chart(title, labels, values, x_label, y_label):
     svg += '</svg>\n'
     return svg
 
-def draw_donut_chart(title, labels, values):
+def draw_donut_chart(title, labels, values, palette: dict = None):
+    if palette is None:
+        palette = COLOR_PALETTES[0]
+        
     svg_width = 650
     svg_height = 290
     cx = 170
@@ -185,7 +481,7 @@ def draw_donut_chart(title, labels, values):
     if total <= 0:
         total = 1
         
-    colors = ["#0d9488", "#6366f1", "#0f766e", "#fb7185", "#f59e0b", "#10b981", "#3b82f6"]
+    colors = palette.get("chart_colors", ["#0d9488", "#6366f1", "#0f766e", "#fb7185", "#f59e0b", "#10b981", "#3b82f6"])
     
     svg = f'<svg viewBox="0 0 {svg_width} {svg_height}" width="100%" height="{svg_height}" class="chart-donut" xmlns="http://www.w3.org/2000/svg">\n'
     svg += '  <style>\n'
@@ -229,7 +525,10 @@ def draw_donut_chart(title, labels, values):
     svg += '</svg>\n'
     return svg
 
-def draw_line_chart(title, labels, values, x_label, y_label, area=False):
+def draw_line_chart(title, labels, values, x_label, y_label, area=False, palette: dict = None):
+    if palette is None:
+        palette = COLOR_PALETTES[0]
+        
     svg_width = 650
     svg_height = 340
     margin_left = 70
@@ -252,6 +551,7 @@ def draw_line_chart(title, labels, values, x_label, y_label, area=False):
         grid_max = 1.0
         
     num_ticks = 4
+    primary = palette.get("primary", "#0d9488")
     
     svg = f'<svg viewBox="0 0 {svg_width} {svg_height}" width="100%" height="{svg_height}" class="chart-line" xmlns="http://www.w3.org/2000/svg">\n'
     svg += '  <style>\n'
@@ -260,16 +560,16 @@ def draw_line_chart(title, labels, values, x_label, y_label, area=False):
     svg += '    .c-tick-label { font-family: "Inter", "Helvetica Neue", sans-serif; font-size: 9px; fill: #64748b; }\n'
     svg += '    .c-grid-line { stroke: #e2e8f0; stroke-width: 1; stroke-dasharray: 2 2; }\n'
     svg += '    .c-axis { stroke: #cbd5e1; stroke-width: 1.5; }\n'
-    svg += '    .c-line { stroke: #0d9488; stroke-width: 3; fill: none; stroke-linecap: round; stroke-linejoin: round; }\n'
+    svg += f'    .c-line {{ stroke: {primary}; stroke-width: 3; fill: none; stroke-linecap: round; stroke-linejoin: round; }}\n'
     svg += '    .c-area { fill: url(#area-grad); stroke: none; }\n'
-    svg += '    .c-point { fill: #0d9488; stroke: #ffffff; stroke-width: 2; }\n'
-    svg += '    .c-point-val { font-family: "Inter", "Helvetica Neue", sans-serif; font-size: 9px; fill: #0d9488; font-weight: 600; text-anchor: middle; }\n'
+    svg += f'    .c-point {{ fill: {primary}; stroke: #ffffff; stroke-width: 2; }}\n'
+    svg += f'    .c-point-val {{ font-family: "Inter", "Helvetica Neue", sans-serif; font-size: 9px; fill: {primary}; font-weight: 600; text-anchor: middle; }}\n'
     svg += '  </style>\n'
     
     svg += '  <defs>\n'
     svg += '    <linearGradient id="area-grad" x1="0" y1="0" x2="0" y2="1">\n'
-    svg += '      <stop offset="0%" stop-color="#0d9488" stop-opacity="0.35"/>\n'
-    svg += '      <stop offset="100%" stop-color="#0d9488" stop-opacity="0.0"/>\n'
+    svg += f'      <stop offset="0%" stop-color="{primary}" stop-opacity="0.35"/>\n'
+    svg += f'      <stop offset="100%" stop-color="{primary}" stop-opacity="0.0"/>\n'
     svg += '    </linearGradient>\n'
     svg += '  </defs>\n'
     
@@ -321,7 +621,10 @@ def draw_line_chart(title, labels, values, x_label, y_label, area=False):
     svg += '</svg>\n'
     return svg
 
-def generate_svg_chart(chart_data: dict) -> str:
+def generate_svg_chart(chart_data: dict, palette: dict = None) -> str:
+    if palette is None:
+        palette = COLOR_PALETTES[0]
+        
     chart_type = chart_data.get("type", "bar").lower()
     title = chart_data.get("title", "")
     labels = chart_data.get("labels", [])
@@ -329,6 +632,9 @@ def generate_svg_chart(chart_data: dict) -> str:
     x_label = chart_data.get("x_label", "")
     y_label = chart_data.get("y_label", "")
     
+    if chart_type in ("block_diagram", "diagram", "architecture"):
+        return draw_block_diagram(chart_data, palette)
+        
     if not labels or not values:
         return "<!-- Chart missing data labels or values -->"
         
@@ -338,22 +644,22 @@ def generate_svg_chart(chart_data: dict) -> str:
         return "<!-- Invalid numeric data in chart -->"
         
     if chart_type in ("donut", "pie"):
-        return draw_donut_chart(title, labels, values)
+        return draw_donut_chart(title, labels, values, palette=palette)
     elif chart_type == "line":
-        return draw_line_chart(title, labels, values, x_label, y_label, area=False)
+        return draw_line_chart(title, labels, values, x_label, y_label, area=False, palette=palette)
     elif chart_type == "area":
-        return draw_line_chart(title, labels, values, x_label, y_label, area=True)
+        return draw_line_chart(title, labels, values, x_label, y_label, area=True, palette=palette)
     else:
-        return draw_bar_chart(title, labels, values, x_label, y_label)
+        return draw_bar_chart(title, labels, values, x_label, y_label, palette=palette)
 
-def process_charts(markdown_content: str) -> str:
-    pattern = r"```json-chart\s*\n(.*?)\n\s*```"
+def process_charts(markdown_content: str, palette: dict = None) -> str:
+    pattern = r"```(?:json-chart|json-diagram)\s*\n(.*?)\n\s*```"
     
     def replacer(match):
         json_str = match.group(1)
         try:
             chart_data = json.loads(json_str)
-            svg_content = generate_svg_chart(chart_data)
+            svg_content = generate_svg_chart(chart_data, palette=palette)
             return f'<div class="chart-container">{svg_content}</div>'
         except Exception as e:
             return f'<div class="chart-error">Chart Rendering Error: {str(e)}</div>'
@@ -505,9 +811,10 @@ def inject_page_breaks(html_content: str) -> str:
 def generate_pdf_report(markdown_content: str, run_id: str) -> tuple[str, int]:
     """Converts Markdown text to a highly-styled consulting-firm grade PDF report."""
     
+    palette = get_palette_for_run(run_id)
     cover_data, body_markdown = extract_cover_data(markdown_content)
     body_markdown = ensure_markdown_spacing(body_markdown)
-    body_markdown = process_charts(body_markdown)
+    body_markdown = process_charts(body_markdown, palette=palette)
     raw_html = markdown.markdown(body_markdown, extensions=['tables', 'fenced_code'])
     
     # Remove KPI Dashboard heading entirely to match Demo design (where the cards render below TOC directly)
@@ -810,8 +1117,8 @@ def generate_pdf_report(markdown_content: str, run_id: str) -> tuple[str, int]:
             }}
             .kpi-card {{
                 flex: 1;
-                background: #f8fafc;
-                border: 1px solid #e2e8f0;
+                background: {palette['kpi_bg']};
+                border: 1px solid {palette['kpi_border']};
                 border-radius: 12px;
                 padding: 20px;
                 text-align: center;
@@ -822,7 +1129,7 @@ def generate_pdf_report(markdown_content: str, run_id: str) -> tuple[str, int]:
                 display: block;
                 font-size: 26px;
                 font-weight: 700;
-                color: #0d9488;
+                color: {palette['primary']};
                 font-family: 'Space Grotesk', sans-serif;
                 margin-bottom: 4px;
             }}
@@ -838,7 +1145,7 @@ def generate_pdf_report(markdown_content: str, run_id: str) -> tuple[str, int]:
             .kpi-desc {{
                 display: block;
                 font-size: 10px;
-                color: #10b981;
+                color: {palette['secondary']};
                 font-weight: 500;
             }}
             
