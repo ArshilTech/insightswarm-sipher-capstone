@@ -97,7 +97,7 @@ def research_node(state: ResearchState) -> Dict:
 def synthesize_node(state: ResearchState) -> Dict:
     """Uses an LLM to draft the report based on gathered sources."""
     log = get_run_logger(__name__, state['run_id'])
-    log.info(f"SYNTHESIZER: Writing draft using {len(state['sources'])} sources.")
+    log.info(f"SYNTHESIZER: Writing draft using {len(state['sources'])}3 sources.")
 
     # Format sources into a readable context block for the LLM
     context = ""
