@@ -808,6 +808,11 @@ def inject_page_breaks(html_content: str) -> str:
     
     return html_content
 
+def ensure_live_links(html_content: str) -> str:
+    """Converts unlinked URLs in HTML content into active clickable <a> links."""
+    url_pattern = r'(?<!href=")(?<!src=")(?<!">)(https?://[^\s<>"\'()]+)'
+    return re.sub(url_pattern, r'<a href="\1" target="_blank" rel="noopener noreferrer">\1</a>', html_content)
+
 def generate_pdf_report(markdown_content: str, run_id: str) -> tuple[str, int]:
     """Converts Markdown text to a highly-styled consulting-firm grade PDF report."""
     
@@ -829,6 +834,7 @@ def generate_pdf_report(markdown_content: str, run_id: str) -> tuple[str, int]:
     
     raw_html = process_toc(raw_html)
     raw_html = inject_page_breaks(raw_html)
+    raw_html = ensure_live_links(raw_html)
     
     cover_html = f"""
     <div class="cover-page">
@@ -1019,6 +1025,14 @@ def generate_pdf_report(markdown_content: str, run_id: str) -> tuple[str, int]:
             }}
             li {{
                 margin-bottom: 6px;
+            }}
+            a {{
+                color: #0d9488;
+                text-decoration: underline;
+                word-break: break-all;
+            }}
+            a:hover {{
+                color: #0f766e;
             }}
             
             /* Table of Contents Styles */

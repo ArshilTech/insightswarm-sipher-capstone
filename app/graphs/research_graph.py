@@ -240,7 +240,7 @@ Classification: BUSINESS INTELLIGENCE
    - 5. Best Practices & Tactical Recommendations (Include 1 Line or Area Chart showing adoption/growth trends)
    - 6. Future Trends & Strategic Outlook (Next 5-10 years timeline, opportunities, and challenges. Include 1 Forecast Line or Area Chart showing future size/adoption)
    - 7. Conclusion & Strategic Summary
-   - References (A numbered list of trusted sources citing organizations, journals, or reports. Place this section at the very end of the report so it appears on the last page only)
+   - References (A numbered list of all trusted sources used. Place this section at the very end of the report on the last page under `References`. CRITICAL REQUIREMENT: Every single entry MUST include a live, clickable markdown hyperlink formatted as `[Source Title or Organization](URL)` using the exact URL provided in the Sources context, so that when the user clicks it, they transfer directly to the exact location from where the data has been taken.)
 """),
         ("user", "Topic: {topic}\nInstructions: {instructions}\n\nSources:\n{context}")
     ])
