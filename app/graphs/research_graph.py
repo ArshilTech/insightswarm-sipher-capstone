@@ -273,9 +273,7 @@ Rules:
                 )
         
 
-    print("========== GENERATED REPORT ==========")
-    print(draft)
-    print("======================================")
+    
 
     return {"draft": draft}
 
@@ -316,9 +314,7 @@ def render_node(state: ResearchState) -> Dict:
     log = get_run_logger(__name__, state['run_id'])
     log.info("RENDERER: Storing final markdown report.")
 
-    print("\n================ FINAL MARKDOWN ================\n")
-    print(state["draft"])
-    print("\n===============================================\n")
+    
 
     return {"final_report": state["draft"]}
 
