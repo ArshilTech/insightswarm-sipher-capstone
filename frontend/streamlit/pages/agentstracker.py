@@ -405,25 +405,27 @@ st.markdown(
             width: auto !important;
         }
 
-        .back-button-wrap button {
-            background: var(--surface) !important;
-            color: var(--teal-600) !important;
-            border: 1px solid var(--line) !important;
-            border-radius: var(--radius-md) !important;
-            padding: 0.65rem 1.3rem !important;
+           .back-button-wrap + div button,
+            button[data-testid="stBaseButton-secondary"] {
             font-family: var(--font-display) !important;
             font-weight: 600 !important;
+            font-size: 0.92rem !important;
+            color: var(--teal-700) !important;
+            background: var(--surface-raised) !important;
+            border: 1px solid var(--line) !important;
+            border-radius: var(--radius-sm) !important;
+            padding: 0.5rem 1rem !important;
             box-shadow: var(--shadow-sm) !important;
-            transition: all 0.3s ease !important;
-            width: auto !important;
+            transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease !important;
+            position: relative;
+            z-index: 1000;
         }
 
-        .back-button-wrap button:hover {
-            transform: translateY(-2px) !important;
+         .back-button-wrap + div button:hover,
+        button[data-testid="stBaseButton-secondary"]:hover {
+            transform: translateX(-2px) !important;
+            border-color: rgba(13, 148, 136, 0.3) !important;
             box-shadow: var(--shadow-md) !important;
-            background: var(--surface-solid) !important;
-            border-color: var(--teal-500) !important;
-        }
 
         .small-chip {
             display: inline-block;
