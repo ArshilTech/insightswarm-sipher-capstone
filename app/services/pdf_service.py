@@ -65,6 +65,8 @@ if os.name == 'nt':
             # Normally loading one valid path is enough, but we update the PATH for all candidates
             
 from weasyprint import HTML
+import base64
+from app.services.image_service import download_image
 
 # --- Helper Functions for SVG Chart Generation ---
 
@@ -359,7 +361,114 @@ def process_charts(markdown_content: str) -> str:
             return f'<div class="chart-error">Chart Rendering Error: {str(e)}</div>'
             
     return re.sub(pattern, replacer, markdown_content, flags=re.DOTALL)
+def process_images(markdown_content: str) -> str:
 
+    pattern = r"\[IMAGE:(.*?)\]"
+
+    matches = re.findall(pattern, markdown_content)
+
+    print(f"\nFound {len(matches)} image placeholders")
+
+    # Maximum number of images in one report
+    MAX_IMAGES = 3
+
+    used_queries = set()
+    used_image_hashes = set()
+    images_added = 0
+
+    for query in matches:
+
+        query = query.strip()
+
+        # Skip duplicate search queries
+        if query.lower() in used_queries:
+            markdown_content = markdown_content.replace(
+                f"[IMAGE: {query}]",
+                "",
+                1
+            )
+            markdown_content = markdown_content.replace(
+                f"[IMAGE:{query}]",
+                "",
+                1
+            )
+            continue
+
+        # Stop after maximum images
+        if images_added >= MAX_IMAGES:
+
+            markdown_content = markdown_content.replace(
+                f"[IMAGE: {query}]",
+                "",
+                1
+            )
+            markdown_content = markdown_content.replace(
+                f"[IMAGE:{query}]",
+                "",
+                1
+            )
+            continue
+
+        print(f"Downloading: {query}")
+
+        image_path = download_image(query)
+
+        if image_path is None:
+
+            markdown_content = markdown_content.replace(
+                f"[IMAGE: {query}]",
+                "",
+                1
+            )
+            markdown_content = markdown_content.replace(
+                f"[IMAGE:{query}]",
+                "",
+                1
+            )
+
+            continue
+
+        with open(image_path, "rb") as img:
+
+            encoded = base64.b64encode(
+                img.read()
+            ).decode()
+
+        html = f"""
+<div style="text-align:center; margin:35px 0;">
+<img
+src="data:image/jpeg;base64,{encoded}"
+style="
+max-width:70%;
+max-height:420px;
+border-radius:10px;
+display:block;
+margin:auto;
+"
+/>
+</div>
+"""
+
+        markdown_content = markdown_content.replace(
+            f"[IMAGE: {query}]",
+            html,
+            1
+        )
+
+        markdown_content = markdown_content.replace(
+            f"[IMAGE:{query}]",
+            html,
+            1
+        )
+
+        used_queries.add(query.lower())
+
+        images_added += 1
+
+    # Remove any remaining placeholders
+    markdown_content = re.sub(pattern, "", markdown_content)
+
+    return markdown_content
 def extract_cover_data(markdown_content: str) -> tuple[dict, str]:
     cover_data = {
         "title": "Corporate Strategy & Intelligence Report",
@@ -508,6 +617,7 @@ def generate_pdf_report(markdown_content: str, run_id: str) -> tuple[str, int]:
     cover_data, body_markdown = extract_cover_data(markdown_content)
     body_markdown = ensure_markdown_spacing(body_markdown)
     body_markdown = process_charts(body_markdown)
+    body_markdown = process_images(body_markdown)  
     raw_html = markdown.markdown(body_markdown, extensions=['tables', 'fenced_code'])
     
     # Remove KPI Dashboard heading entirely to match Demo design (where the cards render below TOC directly)
