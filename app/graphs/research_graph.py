@@ -283,7 +283,7 @@ def verify_node(state: ResearchState) -> Dict:
     log.info("VERIFIER: Checking factual consistency.")
     
     if not state.get("sources"):
-        log.info("VERIFIER: No sources available, marking as verified.")
+        log.info("VERIFIER: 03 sources available, marking as verified.")
         return {"is_verified": True}
     
     # Format sources for the LLM to reference
