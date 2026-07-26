@@ -221,7 +221,7 @@ Rules:
    - 5. Best Practices & Tactical Recommendations (Include 1 Line or Area Chart showing adoption/growth trends)
    - 6. Future Trends & Strategic Outlook (Next 5-10 years timeline, opportunities, and challenges. Include 1 Forecast Line or Area Chart showing future size/adoption)
    - 7. Conclusion & Strategic Summary
-   - References (A numbered list of all trusted sources used. Place this section at the very end of the report on the last page under `References`. CRITICAL REQUIREMENT: Every single entry MUST include a live, clickable markdown hyperlink formatted as `[Source Title or Organization](URL)` using the exact URL provided in the Sources context, so that when the user clicks it, they transfer directly to the exact location from where the data has been taken.)
+   - References (A numbered list of ALL sources used. Place this at the very end under `References`. CRITICAL REQUIREMENT: For EVERY reference entry you MUST use the ACTUAL title and ACTUAL URL from the Sources provided above — do NOT use placeholder text like "Source Title or Organization". Format each entry as: `1. [Actual Title of the Article or Website](https://actual-url-from-sources.com)`. For example, if a source has title "Global AI Market Report" and URL "https://example.com/ai-report", write: `1. [Global AI Market Report](https://example.com/ai-report)`. Every entry MUST be a clickable markdown hyperlink pointing to the real source URL.)
 """),
         ("user", "Topic: {topic}\nInstructions: {instructions}\n\nSources:\n{context}")
     ])
