@@ -2,72 +2,18 @@ import os
 import re
 import json
 import math
-import hashlib
 import markdown
 from dotenv import load_dotenv
 
 load_dotenv()
 
-COLOR_THEMES_50 = [
-    {"name": "Teal", "primary": "#0d9488", "dark": "#0f766e", "light": "#f0fdfa", "chart": ["#0d9488", "#14b8a6", "#2dd4bf", "#0e7490", "#047857"]},
-    {"name": "Indigo", "primary": "#6366f1", "dark": "#4338ca", "light": "#eef2ff", "chart": ["#6366f1", "#818cf8", "#a5b4fc", "#4f46e5", "#3730a3"]},
-    {"name": "Rose", "primary": "#ec4899", "dark": "#be185d", "light": "#fdf2f8", "chart": ["#ec4899", "#f472b6", "#fbcfe8", "#db2777", "#9f1239"]},
-    {"name": "Violet", "primary": "#8b5cf6", "dark": "#6d28d9", "light": "#f5f3ff", "chart": ["#8b5cf6", "#a78bfa", "#c4b5fd", "#7c3aed", "#5b21b6"]},
-    {"name": "Amber", "primary": "#f59e0b", "dark": "#b45309", "light": "#fffbeb", "chart": ["#f59e0b", "#fbbf24", "#fde68a", "#d97706", "#92400e"]},
-    {"name": "Emerald", "primary": "#10b981", "dark": "#047857", "light": "#ecfdf5", "chart": ["#10b981", "#34d399", "#6ee7b7", "#059669", "#064e3b"]},
-    {"name": "Sapphire", "primary": "#3b82f6", "dark": "#1d4ed8", "light": "#eff6ff", "chart": ["#3b82f6", "#60a5fa", "#93c5fd", "#2563eb", "#1e40af"]},
-    {"name": "Crimson", "primary": "#ef4444", "dark": "#b91c1c", "light": "#fef2f2", "chart": ["#ef4444", "#f87171", "#fca5a5", "#dc2626", "#991b1b"]},
-    {"name": "Cyan", "primary": "#06b6d4", "dark": "#0e7490", "light": "#ecfeff", "chart": ["#06b6d4", "#22d3ee", "#67e8f9", "#0891b2", "#164e63"]},
-    {"name": "Lime", "primary": "#84cc16", "dark": "#4d7c0f", "light": "#f7fee7", "chart": ["#84cc16", "#a3e635", "#bef264", "#65a30d", "#365314"]},
-    {"name": "Fuchsia", "primary": "#d946ef", "dark": "#a21caf", "light": "#fdf4ff", "chart": ["#d946ef", "#e879f9", "#f0abfc", "#c026d3", "#701a75"]},
-    {"name": "Sky", "primary": "#0284c7", "dark": "#0369a1", "light": "#f0f9ff", "chart": ["#0284c7", "#38bdf8", "#7dd3fc", "#075985", "#0c4a6e"]},
-    {"name": "Forest", "primary": "#059669", "dark": "#065f46", "light": "#ecfdf5", "chart": ["#059669", "#10b981", "#34d399", "#047857", "#064e3b"]},
-    {"name": "Purple", "primary": "#7c3aed", "dark": "#5b21b6", "light": "#f5f3ff", "chart": ["#7c3aed", "#8b5cf6", "#a78bfa", "#6d28d9", "#4c1d95"]},
-    {"name": "Magenta", "primary": "#db2777", "dark": "#9f1239", "light": "#fdf2f8", "chart": ["#db2777", "#ec4899", "#f472b6", "#be185d", "#831843"]},
-    {"name": "Orange", "primary": "#ea580c", "dark": "#9a3412", "light": "#fff7ed", "chart": ["#ea580c", "#f97316", "#fb923c", "#c2410c", "#7c2d12"]},
-    {"name": "Gold", "primary": "#ca8a04", "dark": "#854d0e", "light": "#fefce8", "chart": ["#ca8a04", "#eab308", "#fde047", "#a16207", "#713f12"]},
-    {"name": "Olive", "primary": "#65a30d", "dark": "#365314", "light": "#f7fee7", "chart": ["#65a30d", "#84cc16", "#a3e635", "#4d7c0f", "#1a2e05"]},
-    {"name": "Ocean", "primary": "#0891b2", "dark": "#155e75", "light": "#ecfeff", "chart": ["#0891b2", "#06b6d4", "#22d3ee", "#0e7490", "#164e63"]},
-    {"name": "Royal", "primary": "#4f46e5", "dark": "#3730a3", "light": "#eef2ff", "chart": ["#4f46e5", "#6366f1", "#818cf8", "#4338ca", "#312e81"]},
-    {"name": "Orchid", "primary": "#c026d3", "dark": "#701a75", "light": "#fdf4ff", "chart": ["#c026d3", "#d946ef", "#e879f9", "#a21caf", "#4a044e"]},
-    {"name": "Ruby", "primary": "#e11d48", "dark": "#831843", "light": "#fff1f2", "chart": ["#e11d48", "#f43f5e", "#fb7185", "#be123c", "#4c0519"]},
-    {"name": "Cobalt", "primary": "#2563eb", "dark": "#1e40af", "light": "#eff6ff", "chart": ["#2563eb", "#3b82f6", "#60a5fa", "#1d4ed8", "#1e3a8a"]},
-    {"name": "Jade", "primary": "#047857", "dark": "#064e3b", "light": "#ecfdf5", "chart": ["#047857", "#059669", "#10b981", "#065f46", "#022c22"]},
-    {"name": "Deep Violet", "primary": "#6d28d9", "dark": "#4c1d95", "light": "#f5f3ff", "chart": ["#6d28d9", "#7c3aed", "#8b5cf6", "#5b21b6", "#3b0764"]},
-    {"name": "Berry", "primary": "#be185d", "dark": "#831843", "light": "#fdf2f8", "chart": ["#be185d", "#db2777", "#ec4899", "#9f1239", "#500724"]},
-    {"name": "Terracotta", "primary": "#c2410c", "dark": "#7c2d12", "light": "#fff7ed", "chart": ["#c2410c", "#ea580c", "#f97316", "#9a3412", "#431407"]},
-    {"name": "Bronze", "primary": "#b45309", "dark": "#78350f", "light": "#fffbeb", "chart": ["#b45309", "#d97706", "#f59e0b", "#92400e", "#451a03"]},
-    {"name": "Moss", "primary": "#4d7c0f", "dark": "#1a2e05", "light": "#f7fee7", "chart": ["#4d7c0f", "#65a30d", "#84cc16", "#365314", "#1a2e05"]},
-    {"name": "Deep Cyan", "primary": "#0e7490", "dark": "#164e63", "light": "#ecfeff", "chart": ["#0e7490", "#0891b2", "#06b6d4", "#155e75", "#083344"]},
-    {"name": "Midnight", "primary": "#4338ca", "dark": "#312e81", "light": "#eef2ff", "chart": ["#4338ca", "#4f46e5", "#6366f1", "#3730a3", "#1e1b4b"]},
-    {"name": "Plum", "primary": "#a21caf", "dark": "#581c87", "light": "#fdf4ff", "chart": ["#a21caf", "#c026d3", "#d946ef", "#701a75", "#4a044e"]},
-    {"name": "Burgundy", "primary": "#9f1239", "dark": "#4c0519", "light": "#fff1f2", "chart": ["#9f1239", "#be123c", "#e11d48", "#831843", "#500724"]},
-    {"name": "Ultramarine", "primary": "#1d4ed8", "dark": "#1e3a8a", "light": "#eff6ff", "chart": ["#1d4ed8", "#2563eb", "#3b82f6", "#1e40af", "#172554"]},
-    {"name": "Pine", "primary": "#065f46", "dark": "#022c22", "light": "#ecfdf5", "chart": ["#065f46", "#047857", "#059669", "#064e3b", "#022c22"]},
-    {"name": "Amethyst", "primary": "#5b21b6", "dark": "#3b0764", "light": "#f5f3ff", "chart": ["#5b21b6", "#6d28d9", "#7c3aed", "#4c1d95", "#2e1065"]},
-    {"name": "Garnet", "primary": "#831843", "dark": "#500724", "light": "#fdf2f8", "chart": ["#831843", "#9f1239", "#be185d", "#701a75", "#4a044e"]},
-    {"name": "Rust", "primary": "#9a3412", "dark": "#431407", "light": "#fff7ed", "chart": ["#9a3412", "#c2410c", "#ea580c", "#7c2d12", "#431407"]},
-    {"name": "Copper", "primary": "#78350f", "dark": "#451a03", "light": "#fffbeb", "chart": ["#78350f", "#92400e", "#b45309", "#78350f", "#451a03"]},
-    {"name": "Dark Moss", "primary": "#365314", "dark": "#1a2e05", "light": "#f7fee7", "chart": ["#365314", "#4d7c0f", "#65a30d", "#1a2e05", "#0f172a"]},
-    {"name": "Teal Blue", "primary": "#155e75", "dark": "#083344", "light": "#ecfeff", "chart": ["#155e75", "#0e7490", "#0891b2", "#164e63", "#083344"]},
-    {"name": "Indigo Night", "primary": "#3730a3", "dark": "#1e1b4b", "light": "#eef2ff", "chart": ["#3730a3", "#4338ca", "#4f46e5", "#312e81", "#1e1b4b"]},
-    {"name": "Deep Plum", "primary": "#701a75", "dark": "#4a044e", "light": "#fdf4ff", "chart": ["#701a75", "#831843", "#a21caf", "#581c87", "#3b0764"]},
-    {"name": "Pacific", "primary": "#0284c7", "dark": "#0c4a6e", "light": "#f0f9ff", "chart": ["#0284c7", "#0369a1", "#075985", "#0c4a6e", "#0369a1"]},
-    {"name": "Mint Teal", "primary": "#14b8a6", "dark": "#0f766e", "light": "#f0fdfa", "chart": ["#14b8a6", "#0d9488", "#2dd4bf", "#0f766e", "#047857"]},
-    {"name": "Neon Violet", "primary": "#a855f7", "dark": "#7e22ce", "light": "#faf5ff", "chart": ["#a855f7", "#9333ea", "#c084fc", "#6b21a8", "#581c87"]},
-    {"name": "Coral Rose", "primary": "#f43f5e", "dark": "#be123c", "light": "#fff1f2", "chart": ["#f43f5e", "#e11d48", "#fb7185", "#9f1239", "#881337"]},
-    {"name": "Warm Amber", "primary": "#eab308", "dark": "#a16207", "light": "#fefce8", "chart": ["#eab308", "#ca8a04", "#fde047", "#854d0e", "#713f12"]},
-    {"name": "Steel Slate", "primary": "#64748b", "dark": "#334155", "light": "#f8fafc", "chart": ["#64748b", "#475569", "#94a3b8", "#1e293b", "#0f172a"]},
-    {"name": "Sapphire Blue", "primary": "#2563eb", "dark": "#1d4ed8", "light": "#eff6ff", "chart": ["#2563eb", "#1d4ed8", "#3b82f6", "#1e40af", "#1e3a8a"]}
-]
-
-def get_theme_for_run(seed: str = "") -> dict:
-    """Selects 1 cohesive color theme template out of 50 for a given report run."""
-    if not seed:
-        return COLOR_THEMES_50[0]
-    hash_num = int(hashlib.md5(seed.encode()).hexdigest(), 16)
-    idx = hash_num % len(COLOR_THEMES_50)
-    return COLOR_THEMES_50[idx]
+DEFAULT_THEME = {
+    "name": "Teal",
+    "primary": "#0d9488",
+    "dark": "#0f766e",
+    "light": "#f0fdfa",
+    "chart": ["#0d9488", "#14b8a6", "#2dd4bf", "#0e7490", "#047857"],
+}
 
 # Add GTK dll path for WeasyPrint on Windows
 if os.name == 'nt':
@@ -181,7 +127,8 @@ def draw_bar_chart(title, labels, values, x_label, y_label, theme=None):
         grid_max = 1.0
         
     num_ticks = 4
-    colors = theme["chart"] if (theme and "chart" in theme) else COLOR_THEMES_50[0]["chart"]
+    chart_theme = theme or DEFAULT_THEME
+    colors = chart_theme.get("chart", DEFAULT_THEME["chart"])
     
     svg = f'<svg viewBox="0 0 {svg_width} {svg_height}" width="100%" height="{svg_height}" class="chart-bar" xmlns="http://www.w3.org/2000/svg">\n'
     svg += '  <style>\n'
@@ -249,7 +196,8 @@ def draw_donut_chart(title, labels, values, theme=None):
     if total <= 0:
         total = 1
         
-    colors = theme["chart"] if (theme and "chart" in theme) else COLOR_THEMES_50[0]["chart"]
+    chart_theme = theme or DEFAULT_THEME
+    colors = chart_theme.get("chart", DEFAULT_THEME["chart"])
     
     svg = f'<svg viewBox="0 0 {svg_width} {svg_height}" width="100%" height="{svg_height}" class="chart-donut" xmlns="http://www.w3.org/2000/svg">\n'
     svg += '  <style>\n'
@@ -316,7 +264,8 @@ def draw_line_chart(title, labels, values, x_label, y_label, area=False, theme=N
         grid_max = 1.0
         
     num_ticks = 4
-    colors = theme["chart"] if (theme and "chart" in theme) else COLOR_THEMES_50[0]["chart"]
+    chart_theme = theme or DEFAULT_THEME
+    colors = chart_theme.get("chart", DEFAULT_THEME["chart"])
     line_col = colors[0]
     point_col = colors[1 % len(colors)]
     
@@ -614,6 +563,11 @@ def process_toc(html_content: str) -> str:
     html_content = re.sub(r'<ul class="toc-list">.*?</ul>', wrap_toc_items, html_content, flags=re.DOTALL)
     return html_content
 
+def wrap_references_section(html_content: str) -> str:
+    """Wrap the References heading and its body in a dedicated styled container."""
+    pattern = r'(<h1[^>]*>\s*References\s*</h1>)(.*?)(?=<h[1-4][^>]*>|\Z)'
+    return re.sub(pattern, r'<div class="references-section">\1\2</div>', html_content, flags=re.DOTALL | re.IGNORECASE)
+
 # --- Main PDF Generation Service ---
 
 def ensure_markdown_spacing(markdown_content: str) -> str:
@@ -682,32 +636,32 @@ def ensure_live_links(html_content: str) -> str:
     url_pattern = r'(?<!href=")(?<!src=")(?<!">)(https?://[^\s<>"\'()]+)'
     return re.sub(url_pattern, r'<a href="\1" target="_blank" rel="noopener noreferrer">\1</a>', html_content)
 
-def colorize_kpi_cards(html_content: str, theme: dict) -> str:
-    """Applies cohesive single color theme template styling across KPI cards."""
+def colorize_kpi_cards(html_content: str, theme: dict | None = None) -> str:
+    """Preserves the existing KPI card markup while using the fixed report palette."""
+    theme = theme or DEFAULT_THEME
     card_pattern = r'<div class="kpi-card">\s*<span class="kpi-title">(.*?)</span>\s*<span class="kpi-value">(.*?)</span>\s*<span class="kpi-desc">(.*?)</span>\s*</div>'
-    
+
     matches = list(re.finditer(card_pattern, html_content, flags=re.DOTALL))
     if not matches:
         return html_content
-        
-    primary = theme.get("primary", "#0d9488")
-    dark = theme.get("dark", "#0f766e")
-    
-    for i, match in enumerate(matches):
+
+    primary = theme.get("primary", DEFAULT_THEME["primary"])
+    dark = theme.get("dark", DEFAULT_THEME["dark"])
+
+    for match in matches:
         title, val, desc = match.group(1), match.group(2), match.group(3)
-        
         replacement = f'''<div class="kpi-card" style="border-top: 4px solid {primary}; background: #ffffff; border-radius: 12px; padding: 18px 14px; box-shadow: 0 4px 14px rgba(0, 0, 0, 0.04); text-align: center;">
             <span class="kpi-title" style="color: #64748b; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; display: block; margin-bottom: 6px;">{title}</span>
             <span class="kpi-value" style="color: {primary}; font-size: 26px; font-weight: 800; font-family: 'Space Grotesk', sans-serif; display: block; margin-bottom: 4px;">{val}</span>
             <span class="kpi-desc" style="color: {dark}; font-size: 11px; font-weight: 500; display: block; margin-top: 4px;">{desc}</span>
         </div>'''
         html_content = html_content.replace(match.group(0), replacement, 1)
-        
+
     return html_content
 
 def generate_pdf_report(markdown_content: str, run_id: str) -> tuple[str, int]:
     """Converts Markdown text to a highly-styled consulting-firm grade PDF report."""
-    theme = get_theme_for_run(run_id)
+    theme = DEFAULT_THEME
     
     cover_data, body_markdown = extract_cover_data(markdown_content)
     body_markdown = ensure_markdown_spacing(body_markdown)
@@ -727,6 +681,7 @@ def generate_pdf_report(markdown_content: str, run_id: str) -> tuple[str, int]:
     
     # Convert main numbered headings & References to h1
     raw_html = convert_headings(raw_html)
+    raw_html = wrap_references_section(raw_html)
     
     raw_html = process_toc(raw_html)
     raw_html = inject_page_breaks(raw_html)
@@ -1265,6 +1220,17 @@ def generate_pdf_report(markdown_content: str, run_id: str) -> tuple[str, int]:
                 margin-top: 40px;
                 border-top: 1px solid #e2e8f0;
                 padding-top: 20px;
+            }}
+            .references-section ol, .references-section ul {{
+                margin-left: 1.2em;
+                padding-left: 0;
+            }}
+            .references-section li {{
+                margin-bottom: 10px;
+            }}
+            .references-section a {{
+                color: {theme['primary']};
+                text-decoration: underline;
             }}
         </style>
     </head>
