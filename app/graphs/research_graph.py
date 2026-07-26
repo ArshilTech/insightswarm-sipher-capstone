@@ -97,7 +97,7 @@ def research_node(state: ResearchState) -> Dict:
 def synthesize_node(state: ResearchState) -> Dict:
     """Uses an LLM to draft the report based on gathered sources."""
     log = get_run_logger(__name__, state['run_id'])
-    log.info(f"SYNTHESIZER: Writing draft using {len(state['sources'])} sources.")
+    log.info(f"SYNTHESIZER: Writing draft using {len(state['sources'])}3 sources.")
 
     # Format sources into a readable context block for the LLM
     context = ""
@@ -157,57 +157,9 @@ Classification: BUSINESS INTELLIGENCE
    - Avoid conversational filler. Start directly with `#COVER` and end with references.
    - NO LATEX: WeasyPrint cannot render LaTeX delimiters like $ or $$. Use Unicode characters or plain text instead (e.g. write alpha, beta, 10^5, or UTF-8 mathematical symbols).
 
-5. DATA VISUALIZATIONS, CHARTS & DIAGRAMS:
-   - You must generate and distribute high-quality visual elements (JSON charts, KPI blocks, comparison tables) naturally throughout the report.
-   - DIAGRAM RULE: Add block diagrams or architecture/network diagrams ONLY when the report topic explicitly requires them.
-     - Examples where diagram IS required:
-       ✅ "AI Agent Architecture" -> Include an architecture/block diagram.
-       ✅ "Network Topology" -> Include a network diagram.
-       ✅ "System Infrastructure & Pipeline" -> Include a block diagram.
-     - Examples where diagram is NOT allowed:
-       ❌ "Market Analysis of Netflix" -> Don't add block/architecture diagrams unless specifically relevant.
-       ❌ "Global Supply Chain Trends" -> Don't add block/architecture diagrams unless specifically relevant.
-   - When a block diagram IS explicitly required by the report topic, define it using a ```json-diagram block designed for a vertical top-to-bottom consulting report layout:
-   ```json-diagram
-   {{
-     "type": "block_diagram",
-     "title": "System Architecture & Threat Intelligence Workflow",
-     "nodes": [
-       {{
-         "id": "step1",
-         "heading": "1. Ingestion & Threat Intelligence",
-         "bullet_points": [
-           "Aggregates multi-source telemetry & audit logs",
-           "Filters network traffic anomalies in real-time",
-           "Validates identity and access control credentials"
-         ]
-       }},
-       {{
-         "id": "step2",
-         "heading": "2. Security Analysis & Incident Response",
-         "bullet_points": [
-           "Executes ML-driven threat pattern recognition",
-           "Correlates cross-platform security event signatures",
-           "Prioritizes alerts using dynamic risk matrix"
-         ]
-       }},
-       {{
-         "id": "step3",
-         "heading": "3. Automated Containment & Mitigation",
-         "bullet_points": [
-           "Triggers automated playbook response actions",
-           "Isolates compromised microservices & endpoints",
-           "Generates executive incident audit report"
-         ]
-       }}
-     ],
-     "connections": [
-       {{"from": "step1", "to": "step2", "label": "Threat Intelligence"}},
-       {{"from": "step2", "to": "step3", "label": "Security Alerts"}}
-     ]
-   }}
-   ```
-   - Define standard data charts using this exact JSON code block structure (do not add any conversational text inside the code block):
+5. DATA VISUALIZATIONS & CHARTS:
+   - You must generate and distribute at least 4–6 high-quality visual elements (JSON charts, KPI blocks, comparison tables) naturally throughout the report.
+   - Define each chart using this exact JSON code block structure (do not add any conversational text inside the code block):
    ```json-chart
    {{
      "type": "bar" | "donut" | "line" | "area",
@@ -218,7 +170,36 @@ Classification: BUSINESS INTELLIGENCE
      "y_label": "Y Axis Label (optional)"
    }}
    ```
-   - Immediately follow every chart or diagram block with an "📈 Analysis & Key Insights" section of 150–300 words. Do not use short bullet points. Provide a detailed narrative covering: What the chart/diagram represents, Major trends, Significant observations, Business implications, Strategic recommendations, and Key takeaways.
+   - Immediately follow every chart block with an "📈 Analysis & Key Insights" section of 150–300 words. Do not use short bullet points. Provide a detailed narrative covering: What the chart represents, Major trends, Significant observations, Comparisons with previous years or competitors, Business implications, Strategic recommendations, and Key takeaways.
+   
+5.5 IMAGES & DIAGRAMS (VERY IMPORTANT)
+
+- Throughout the report, include relevant images wherever they improve understanding.
+- DO NOT use Markdown image syntax.
+- DO NOT use HTML <img> tags.
+- Instead, insert placeholders in exactly this format:
+
+[IMAGE: image search query]
+
+Examples:
+
+[IMAGE: Tesla Gigafactory]
+
+[IMAGE: Transformer Architecture]
+
+[IMAGE: CNN Architecture]
+
+[IMAGE: Electric Vehicle Market Growth]
+
+[IMAGE: Apple Supply Chain]
+
+Rules:
+- Include approximately one image every 2–3 major sections.
+- Only request images that directly support the nearby content.
+- The placeholder must be on its own line.
+- Use short Google-search-friendly queries.
+- Do not explain the placeholder.
+- Continue writing normally after the placeholder.
 
 6. TABLES & SUMMARIES:
    - Include comparison tables where appropriate.
@@ -251,6 +232,48 @@ Classification: BUSINESS INTELLIGENCE
         "instructions": state["instructions"],
         "context": context
     })
+
+# -----------------------------------------------------------------
+# Ensure at least a few image placeholders exist
+# -----------------------------------------------------------------
+
+    if "[IMAGE:" not in draft:
+
+        import re
+
+        section_images = {
+            "Introduction": f"{state['topic']} overview",
+            "Market Landscape": f"{state['topic']} architecture",
+            "Case Studies": f"{state['topic']} case study",
+            "Future Trends": f"{state['topic']} future technology",
+        }
+
+        for keyword, query in section_images.items():
+
+            pattern = rf"(^#+\s.*{re.escape(keyword)}.*$)"
+
+            match = re.search(
+                pattern, 
+                draft, 
+                flags=re.IGNORECASE | re.MULTILINE)
+
+            if match:
+
+                heading = match.group(1)
+
+                replacement = (
+                    f"{heading}\n\n"
+                    f"[IMAGE: {query}]"
+                )
+
+                draft = draft.replace(
+                    heading,
+                    replacement,
+                    1
+                )
+        
+
+    
 
     return {"draft": draft}
 
@@ -288,9 +311,10 @@ def verify_node(state: ResearchState) -> Dict:
     return {"is_verified": is_good, "retry_count": state.get("retry_count", 0) + 1}
 
 def render_node(state: ResearchState) -> Dict:
-    """Prepares the drafted Markdown for HTML/PDF rendering later."""
     log = get_run_logger(__name__, state['run_id'])
     log.info("RENDERER: Storing final markdown report.")
+
+    
 
     return {"final_report": state["draft"]}
 

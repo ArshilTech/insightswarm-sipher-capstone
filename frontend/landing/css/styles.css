@@ -219,8 +219,8 @@ ul { list-style: none; }
     width: 7px;
     height: 7px;
     border-radius: 50%;
-    background: var(--teal-500);
-    box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.18);
+    background: #ef4444;
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.2);
     animation: pulseDot 2s ease-in-out infinite;
     flex-shrink: 0;
 }
@@ -442,7 +442,7 @@ ul { list-style: none; }
     gap: 6px;
     font-family: var(--font-mono);
     font-size: 0.7rem;
-    color: var(--teal-600);
+    color: #ef4444;
 }
 
 .console-body {
