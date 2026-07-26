@@ -381,6 +381,32 @@ st.markdown(
             box-shadow: var(--shadow-md) !important;
         }
 
+        /* ===== Delete Button (soft coral/pink) ===== */
+        .delete-btn-wrap button {
+            background: rgba(239, 68, 68, 0.10) !important;
+            color: #dc2626 !important;
+            border: 1.5px solid rgba(239, 68, 68, 0.22) !important;
+            border-radius: 999px !important;
+            font-family: var(--font-display) !important;
+            font-weight: 600 !important;
+            font-size: 0.88rem !important;
+            padding: 0.45rem 1.2rem !important;
+            box-shadow: none !important;
+            transition: background 0.25s ease, border-color 0.25s ease, transform 0.2s ease !important;
+        }
+
+        .delete-btn-wrap button:hover {
+            background: rgba(239, 68, 68, 0.18) !important;
+            border-color: rgba(239, 68, 68, 0.4) !important;
+            transform: translateY(-1px) !important;
+            color: #b91c1c !important;
+        }
+
+        .delete-btn-wrap button:active {
+            background: rgba(239, 68, 68, 0.25) !important;
+            transform: translateY(0) !important;
+        }
+
         /* ===== Streamlit markdown text overrides ===== */
         .stMarkdown, .stMarkdown p, .stMarkdown span {
             font-family: var(--font-body) !important;
@@ -395,6 +421,12 @@ st.markdown(
     """,
     unsafe_allow_html=True,
 )
+
+#-----Back to Dashboard Button (top)-----
+st.markdown("<div class='back-button-wrap' style='position: relative; margin-bottom: 0.5rem; z-index: 1000; width: auto;'>", unsafe_allow_html=True)
+if st.button("← Back to Dashboard", key="back_dashboard"):
+    st.switch_page("streamlit-app.py")
+st.markdown("</div>", unsafe_allow_html=True)
 
 #-----Page Header-----------
 st.markdown(
@@ -438,9 +470,10 @@ else:
                     st.link_button("📄 View Report", url=f"http://localhost:5173/report/{item['id']}", use_container_width=True)
             with col3: #-------------Download Button--------------
                 if item["status"] == "Completed":
-                    st.link_button("⬇️ Download PDF", url=f"http://localhost:8000/api/research/{item['id']}/download", use_container_width=True)
+                    st.link_button("⬇️ Download ", url=f"http://localhost:8000/api/research/{item['id']}/download", use_container_width=True)
             with col4: #------- Delete Button ----------------
                 if item["status"] == "Completed":
+                    st.markdown("<div class='delete-btn-wrap'>", unsafe_allow_html=True)
                     if st.button("🗑️ Delete", key=f"delete_{item['id']}", use_container_width=True):
                         try:
                             resp = requests.delete(f"{BACKEND_URL}/{item['id']}/delete")
@@ -451,11 +484,6 @@ else:
                                 st.error(f"Delete failed: {resp.status_code}")
                         except Exception as e:
                             st.error(f"Error: {e}")
+                    st.markdown("</div>", unsafe_allow_html=True)
 
 st.write("")
-
-#change app.py to dashboard
-st.markdown("<div class='back-button-wrap' style='position: absolute !important; top: 2rem !important; left: 2rem !important; z-index: 1000 !important; width: auto !important;'>", unsafe_allow_html=True)
-if st.button("← Back to Dashboard", key="back_dashboard"):
-    st.switch_page("streamlit-app.py")
-st.markdown("</div>", unsafe_allow_html=True)
