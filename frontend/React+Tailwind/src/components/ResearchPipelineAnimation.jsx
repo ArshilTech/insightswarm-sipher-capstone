@@ -11,7 +11,7 @@ const PIPELINE_STEPS = [
   { label: 'Generating Report', icon: 'report', detail: 'Compiling final document' },
 ];
 
-const STEP_DURATION = 2200; // ms per step
+const STEP_DURATION = 3500; // ms per step
 
 function StepIcon({ type, isActive, isCompleted }) {
   const stroke = isCompleted || isActive ? '#0f766e' : '#64748b';
@@ -300,7 +300,7 @@ export default function ResearchPipelineAnimation({ isActive, onComplete, topic 
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <polyline points="20 6 9 17 4 12" />
             </svg>
-            Research complete — loading report...
+            Research complete - loading report...
           </motion.div>
         )}
       </AnimatePresence>
