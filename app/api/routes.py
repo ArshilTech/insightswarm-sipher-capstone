@@ -255,7 +255,7 @@ async def download_report_pdf(
     )
 
 # --- Report file delete endpoint ---
-@router.delete("/research/{run_id}/report")
+@router.delete("/research/{run_id}/delete")
 async def delete_report(
     run_id: str,
     session: AsyncSession = Depends(get_async_session)

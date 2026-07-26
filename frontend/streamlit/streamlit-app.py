@@ -506,9 +506,22 @@ st.markdown(
 st.markdown("<div class='divider'></div>", unsafe_allow_html=True)
 
 # ---------- Feature panels ----------
-col1, col2 = st.columns(2)
+col1, col2, col3 = st.columns(3)
 
 with col1:
+    st.markdown(
+        """
+        <div class="feature-card">
+            <div class="card-icon">💬</div>
+            <div class="card-title">AI Chatbot</div>
+            <div class="card-desc">Interactive AI assistant for instant research Q&A, context analysis, and real-time support.</div>
+            <a href="/chatbot" target="_self" class="card-btn">Launch Chatbot</a>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+with col2:
     st.markdown(
         """
         <div class="feature-card">
@@ -521,11 +534,11 @@ with col1:
         unsafe_allow_html=True,
     )
 
-with col2:
+with col3:
     st.markdown(
         """
         <div class="feature-card">
-           <div class="card-icon">🕥</div>
+            <div class="card-icon">🕥</div>
             <div class="card-title">Research History</div>
             <div class="card-desc">Browse through your team's historical research reports and generated PDF documents.</div>
             <a href="/research-history" target="_self" class="card-btn">Watch History</a>
@@ -533,7 +546,6 @@ with col2:
         """,
         unsafe_allow_html=True,
     )
-
 
 
 st.markdown("<div class='divider'></div>", unsafe_allow_html=True)

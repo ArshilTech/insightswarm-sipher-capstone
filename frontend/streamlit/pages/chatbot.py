@@ -1,39 +1,18 @@
-from pathlib import Path
-import os
 import streamlit as st
 import requests
-
-#--------Backend API Config---------
-BACKEND_URL = os.getenv(
-    "BACKEND_URL",
-    "http://localhost:8000/api/research"
-)
-
+from pathlib import Path
 
 FAVICON_PATH = Path(__file__).resolve().parent.parent / "favicon.svg"
 
-#----Helper functions for API call---------
-def fetch_history_data():
-    try:
-        response = requests.get(BACKEND_URL)
-        if response.status_code == 200:
-            return response.json().get("data", [])
-    except requests.exceptions.ConnectionError:
-        st.error("Could not connect to backend. Ensure backend is running.")
-    except Exception as e:
-        st.error(f"Error fetching history data: {e}")
-    return[]
-
-#-----------Page Configuraion----------
+#-------Page Config------
 st.set_page_config(
-    page_title="InsightSwarm - Research History",
+    page_title="🤖 InsightSwarm - Chatbot",
     page_icon=str(FAVICON_PATH),
     layout="wide",
     initial_sidebar_state="collapsed",
 )
 
 
-# ---------- Styling (matches landing page theme) ----------
 st.markdown(
     """
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -400,59 +379,12 @@ st.markdown(
 st.markdown(
     """
     <div class="hero">
-    <h1>Research History</h1>
-    <p>Access your past auntonomous research jobs and AI-Generated reports.</p>
+    <h1>Chatbot</h1>
+    <p>InsightSwarm AI Assistant. Turn Static Reports into Dynamic Conversations.</p>
     </div>
     <div class="divider"></div>
 """, unsafe_allow_html=True
 )
-
-#---------Fetch data from beckend -------------
-hisotry_data = fetch_history_data()
-
-#----------Render History List----------------
-if not hisotry_data:
-    st.info("No research history found.")
-else: 
-    for item in hisotry_data:
-        with st.container():
-            col1, col2, col3, col4 = st.columns([8, 2, 2, 2], vertical_alignment="center")
-
-            with col1:
-                badge_class = "badge-success" if item["status"] == "Completed" else "badge-archived"
-                st.markdown(f"""
-                    <div>
-                        <div class="badge {badge_class}">{item["status"]}</div>
-                        <div class="history-title">{item["title"]}</div>
-                        <div class="history-meta">
-                            <span class="meta-chip"><span class="meta-label">ID</span> {item["id"][:8]}…</span>
-                            <span class="meta-chip"><span class="meta-label">Generated</span> {item["date"]}</span>
-                            <span class="meta-chip"><span class="meta-label">Agents</span> {item["agents_used"]}</span>
-                        </div>
-                    </div>
-                    """,
-                    unsafe_allow_html=True
-                )
-            with col2:#----------View Report Button-------------
-                if item["status"] == "Completed":
-                    st.link_button("📄 View Report", url=f"http://localhost:5173/report/{item['id']}", use_container_width=True)
-            with col3: #-------------Download Button--------------
-                if item["status"] == "Completed":
-                    st.link_button("⬇️ Download PDF", url=f"http://localhost:8000/api/research/{item['id']}/download", use_container_width=True)
-            with col4: #------- Delete Button ----------------
-                if item["status"] == "Completed":
-                    if st.button("🗑️ Delete", key=f"delete_{item['id']}", use_container_width=True):
-                        try:
-                            resp = requests.delete(f"{BACKEND_URL}/{item['id']}/delete")
-                            if resp.status_code == 200:
-                                st.success("Report deleted!")
-                                st.rerun()
-                            else:
-                                st.error(f"Delete failed: {resp.status_code}")
-                        except Exception as e:
-                            st.error(f"Error: {e}")
-
-st.write("")
 
 #change app.py to dashboard
 st.markdown("<div class='back-button-wrap' style='position: absolute !important; top: 2rem !important; left: 2rem !important; z-index: 1000 !important; width: auto !important;'>", unsafe_allow_html=True)
