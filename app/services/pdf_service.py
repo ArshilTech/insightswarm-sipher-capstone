@@ -2,10 +2,72 @@ import os
 import re
 import json
 import math
+import hashlib
 import markdown
 from dotenv import load_dotenv
 
 load_dotenv()
+
+COLOR_THEMES_50 = [
+    {"name": "Teal", "primary": "#0d9488", "dark": "#0f766e", "light": "#f0fdfa", "chart": ["#0d9488", "#14b8a6", "#2dd4bf", "#0e7490", "#047857"]},
+    {"name": "Indigo", "primary": "#6366f1", "dark": "#4338ca", "light": "#eef2ff", "chart": ["#6366f1", "#818cf8", "#a5b4fc", "#4f46e5", "#3730a3"]},
+    {"name": "Rose", "primary": "#ec4899", "dark": "#be185d", "light": "#fdf2f8", "chart": ["#ec4899", "#f472b6", "#fbcfe8", "#db2777", "#9f1239"]},
+    {"name": "Violet", "primary": "#8b5cf6", "dark": "#6d28d9", "light": "#f5f3ff", "chart": ["#8b5cf6", "#a78bfa", "#c4b5fd", "#7c3aed", "#5b21b6"]},
+    {"name": "Amber", "primary": "#f59e0b", "dark": "#b45309", "light": "#fffbeb", "chart": ["#f59e0b", "#fbbf24", "#fde68a", "#d97706", "#92400e"]},
+    {"name": "Emerald", "primary": "#10b981", "dark": "#047857", "light": "#ecfdf5", "chart": ["#10b981", "#34d399", "#6ee7b7", "#059669", "#064e3b"]},
+    {"name": "Sapphire", "primary": "#3b82f6", "dark": "#1d4ed8", "light": "#eff6ff", "chart": ["#3b82f6", "#60a5fa", "#93c5fd", "#2563eb", "#1e40af"]},
+    {"name": "Crimson", "primary": "#ef4444", "dark": "#b91c1c", "light": "#fef2f2", "chart": ["#ef4444", "#f87171", "#fca5a5", "#dc2626", "#991b1b"]},
+    {"name": "Cyan", "primary": "#06b6d4", "dark": "#0e7490", "light": "#ecfeff", "chart": ["#06b6d4", "#22d3ee", "#67e8f9", "#0891b2", "#164e63"]},
+    {"name": "Lime", "primary": "#84cc16", "dark": "#4d7c0f", "light": "#f7fee7", "chart": ["#84cc16", "#a3e635", "#bef264", "#65a30d", "#365314"]},
+    {"name": "Fuchsia", "primary": "#d946ef", "dark": "#a21caf", "light": "#fdf4ff", "chart": ["#d946ef", "#e879f9", "#f0abfc", "#c026d3", "#701a75"]},
+    {"name": "Sky", "primary": "#0284c7", "dark": "#0369a1", "light": "#f0f9ff", "chart": ["#0284c7", "#38bdf8", "#7dd3fc", "#075985", "#0c4a6e"]},
+    {"name": "Forest", "primary": "#059669", "dark": "#065f46", "light": "#ecfdf5", "chart": ["#059669", "#10b981", "#34d399", "#047857", "#064e3b"]},
+    {"name": "Purple", "primary": "#7c3aed", "dark": "#5b21b6", "light": "#f5f3ff", "chart": ["#7c3aed", "#8b5cf6", "#a78bfa", "#6d28d9", "#4c1d95"]},
+    {"name": "Magenta", "primary": "#db2777", "dark": "#9f1239", "light": "#fdf2f8", "chart": ["#db2777", "#ec4899", "#f472b6", "#be185d", "#831843"]},
+    {"name": "Orange", "primary": "#ea580c", "dark": "#9a3412", "light": "#fff7ed", "chart": ["#ea580c", "#f97316", "#fb923c", "#c2410c", "#7c2d12"]},
+    {"name": "Gold", "primary": "#ca8a04", "dark": "#854d0e", "light": "#fefce8", "chart": ["#ca8a04", "#eab308", "#fde047", "#a16207", "#713f12"]},
+    {"name": "Olive", "primary": "#65a30d", "dark": "#365314", "light": "#f7fee7", "chart": ["#65a30d", "#84cc16", "#a3e635", "#4d7c0f", "#1a2e05"]},
+    {"name": "Ocean", "primary": "#0891b2", "dark": "#155e75", "light": "#ecfeff", "chart": ["#0891b2", "#06b6d4", "#22d3ee", "#0e7490", "#164e63"]},
+    {"name": "Royal", "primary": "#4f46e5", "dark": "#3730a3", "light": "#eef2ff", "chart": ["#4f46e5", "#6366f1", "#818cf8", "#4338ca", "#312e81"]},
+    {"name": "Orchid", "primary": "#c026d3", "dark": "#701a75", "light": "#fdf4ff", "chart": ["#c026d3", "#d946ef", "#e879f9", "#a21caf", "#4a044e"]},
+    {"name": "Ruby", "primary": "#e11d48", "dark": "#831843", "light": "#fff1f2", "chart": ["#e11d48", "#f43f5e", "#fb7185", "#be123c", "#4c0519"]},
+    {"name": "Cobalt", "primary": "#2563eb", "dark": "#1e40af", "light": "#eff6ff", "chart": ["#2563eb", "#3b82f6", "#60a5fa", "#1d4ed8", "#1e3a8a"]},
+    {"name": "Jade", "primary": "#047857", "dark": "#064e3b", "light": "#ecfdf5", "chart": ["#047857", "#059669", "#10b981", "#065f46", "#022c22"]},
+    {"name": "Deep Violet", "primary": "#6d28d9", "dark": "#4c1d95", "light": "#f5f3ff", "chart": ["#6d28d9", "#7c3aed", "#8b5cf6", "#5b21b6", "#3b0764"]},
+    {"name": "Berry", "primary": "#be185d", "dark": "#831843", "light": "#fdf2f8", "chart": ["#be185d", "#db2777", "#ec4899", "#9f1239", "#500724"]},
+    {"name": "Terracotta", "primary": "#c2410c", "dark": "#7c2d12", "light": "#fff7ed", "chart": ["#c2410c", "#ea580c", "#f97316", "#9a3412", "#431407"]},
+    {"name": "Bronze", "primary": "#b45309", "dark": "#78350f", "light": "#fffbeb", "chart": ["#b45309", "#d97706", "#f59e0b", "#92400e", "#451a03"]},
+    {"name": "Moss", "primary": "#4d7c0f", "dark": "#1a2e05", "light": "#f7fee7", "chart": ["#4d7c0f", "#65a30d", "#84cc16", "#365314", "#1a2e05"]},
+    {"name": "Deep Cyan", "primary": "#0e7490", "dark": "#164e63", "light": "#ecfeff", "chart": ["#0e7490", "#0891b2", "#06b6d4", "#155e75", "#083344"]},
+    {"name": "Midnight", "primary": "#4338ca", "dark": "#312e81", "light": "#eef2ff", "chart": ["#4338ca", "#4f46e5", "#6366f1", "#3730a3", "#1e1b4b"]},
+    {"name": "Plum", "primary": "#a21caf", "dark": "#581c87", "light": "#fdf4ff", "chart": ["#a21caf", "#c026d3", "#d946ef", "#701a75", "#4a044e"]},
+    {"name": "Burgundy", "primary": "#9f1239", "dark": "#4c0519", "light": "#fff1f2", "chart": ["#9f1239", "#be123c", "#e11d48", "#831843", "#500724"]},
+    {"name": "Ultramarine", "primary": "#1d4ed8", "dark": "#1e3a8a", "light": "#eff6ff", "chart": ["#1d4ed8", "#2563eb", "#3b82f6", "#1e40af", "#172554"]},
+    {"name": "Pine", "primary": "#065f46", "dark": "#022c22", "light": "#ecfdf5", "chart": ["#065f46", "#047857", "#059669", "#064e3b", "#022c22"]},
+    {"name": "Amethyst", "primary": "#5b21b6", "dark": "#3b0764", "light": "#f5f3ff", "chart": ["#5b21b6", "#6d28d9", "#7c3aed", "#4c1d95", "#2e1065"]},
+    {"name": "Garnet", "primary": "#831843", "dark": "#500724", "light": "#fdf2f8", "chart": ["#831843", "#9f1239", "#be185d", "#701a75", "#4a044e"]},
+    {"name": "Rust", "primary": "#9a3412", "dark": "#431407", "light": "#fff7ed", "chart": ["#9a3412", "#c2410c", "#ea580c", "#7c2d12", "#431407"]},
+    {"name": "Copper", "primary": "#78350f", "dark": "#451a03", "light": "#fffbeb", "chart": ["#78350f", "#92400e", "#b45309", "#78350f", "#451a03"]},
+    {"name": "Dark Moss", "primary": "#365314", "dark": "#1a2e05", "light": "#f7fee7", "chart": ["#365314", "#4d7c0f", "#65a30d", "#1a2e05", "#0f172a"]},
+    {"name": "Teal Blue", "primary": "#155e75", "dark": "#083344", "light": "#ecfeff", "chart": ["#155e75", "#0e7490", "#0891b2", "#164e63", "#083344"]},
+    {"name": "Indigo Night", "primary": "#3730a3", "dark": "#1e1b4b", "light": "#eef2ff", "chart": ["#3730a3", "#4338ca", "#4f46e5", "#312e81", "#1e1b4b"]},
+    {"name": "Deep Plum", "primary": "#701a75", "dark": "#4a044e", "light": "#fdf4ff", "chart": ["#701a75", "#831843", "#a21caf", "#581c87", "#3b0764"]},
+    {"name": "Pacific", "primary": "#0284c7", "dark": "#0c4a6e", "light": "#f0f9ff", "chart": ["#0284c7", "#0369a1", "#075985", "#0c4a6e", "#0369a1"]},
+    {"name": "Mint Teal", "primary": "#14b8a6", "dark": "#0f766e", "light": "#f0fdfa", "chart": ["#14b8a6", "#0d9488", "#2dd4bf", "#0f766e", "#047857"]},
+    {"name": "Neon Violet", "primary": "#a855f7", "dark": "#7e22ce", "light": "#faf5ff", "chart": ["#a855f7", "#9333ea", "#c084fc", "#6b21a8", "#581c87"]},
+    {"name": "Coral Rose", "primary": "#f43f5e", "dark": "#be123c", "light": "#fff1f2", "chart": ["#f43f5e", "#e11d48", "#fb7185", "#9f1239", "#881337"]},
+    {"name": "Warm Amber", "primary": "#eab308", "dark": "#a16207", "light": "#fefce8", "chart": ["#eab308", "#ca8a04", "#fde047", "#854d0e", "#713f12"]},
+    {"name": "Steel Slate", "primary": "#64748b", "dark": "#334155", "light": "#f8fafc", "chart": ["#64748b", "#475569", "#94a3b8", "#1e293b", "#0f172a"]},
+    {"name": "Sapphire Blue", "primary": "#2563eb", "dark": "#1d4ed8", "light": "#eff6ff", "chart": ["#2563eb", "#1d4ed8", "#3b82f6", "#1e40af", "#1e3a8a"]}
+]
+
+def get_theme_for_run(seed: str = "") -> dict:
+    """Selects 1 cohesive color theme template out of 50 for a given report run."""
+    if not seed:
+        return COLOR_THEMES_50[0]
+    hash_num = int(hashlib.md5(seed.encode()).hexdigest(), 16)
+    idx = hash_num % len(COLOR_THEMES_50)
+    return COLOR_THEMES_50[idx]
 
 # Add GTK dll path for WeasyPrint on Windows
 if os.name == 'nt':
@@ -96,7 +158,7 @@ def get_donut_path(cx, cy, r_out, r_in, start_angle, end_angle):
     path += "Z"
     return path
 
-def draw_bar_chart(title, labels, values, x_label, y_label):
+def draw_bar_chart(title, labels, values, x_label, y_label, theme=None):
     svg_width = 650
     svg_height = 340
     margin_left = 70
@@ -119,7 +181,7 @@ def draw_bar_chart(title, labels, values, x_label, y_label):
         grid_max = 1.0
         
     num_ticks = 4
-    colors = ["#0d9488", "#6366f1", "#0f766e", "#fb7185", "#f59e0b", "#10b981", "#3b82f6"]
+    colors = theme["chart"] if (theme and "chart" in theme) else COLOR_THEMES_50[0]["chart"]
     
     svg = f'<svg viewBox="0 0 {svg_width} {svg_height}" width="100%" height="{svg_height}" class="chart-bar" xmlns="http://www.w3.org/2000/svg">\n'
     svg += '  <style>\n'
@@ -175,7 +237,7 @@ def draw_bar_chart(title, labels, values, x_label, y_label):
     svg += '</svg>\n'
     return svg
 
-def draw_donut_chart(title, labels, values):
+def draw_donut_chart(title, labels, values, theme=None):
     svg_width = 650
     svg_height = 290
     cx = 170
@@ -187,7 +249,7 @@ def draw_donut_chart(title, labels, values):
     if total <= 0:
         total = 1
         
-    colors = ["#0d9488", "#6366f1", "#0f766e", "#fb7185", "#f59e0b", "#10b981", "#3b82f6"]
+    colors = theme["chart"] if (theme and "chart" in theme) else COLOR_THEMES_50[0]["chart"]
     
     svg = f'<svg viewBox="0 0 {svg_width} {svg_height}" width="100%" height="{svg_height}" class="chart-donut" xmlns="http://www.w3.org/2000/svg">\n'
     svg += '  <style>\n'
@@ -231,7 +293,7 @@ def draw_donut_chart(title, labels, values):
     svg += '</svg>\n'
     return svg
 
-def draw_line_chart(title, labels, values, x_label, y_label, area=False):
+def draw_line_chart(title, labels, values, x_label, y_label, area=False, theme=None):
     svg_width = 650
     svg_height = 340
     margin_left = 70
@@ -254,6 +316,9 @@ def draw_line_chart(title, labels, values, x_label, y_label, area=False):
         grid_max = 1.0
         
     num_ticks = 4
+    colors = theme["chart"] if (theme and "chart" in theme) else COLOR_THEMES_50[0]["chart"]
+    line_col = colors[0]
+    point_col = colors[1 % len(colors)]
     
     svg = f'<svg viewBox="0 0 {svg_width} {svg_height}" width="100%" height="{svg_height}" class="chart-line" xmlns="http://www.w3.org/2000/svg">\n'
     svg += '  <style>\n'
@@ -262,16 +327,16 @@ def draw_line_chart(title, labels, values, x_label, y_label, area=False):
     svg += '    .c-tick-label { font-family: "Inter", "Helvetica Neue", sans-serif; font-size: 9px; fill: #64748b; }\n'
     svg += '    .c-grid-line { stroke: #e2e8f0; stroke-width: 1; stroke-dasharray: 2 2; }\n'
     svg += '    .c-axis { stroke: #cbd5e1; stroke-width: 1.5; }\n'
-    svg += '    .c-line { stroke: #0d9488; stroke-width: 3; fill: none; stroke-linecap: round; stroke-linejoin: round; }\n'
+    svg += f'    .c-line {{ stroke: {line_col}; stroke-width: 3; fill: none; stroke-linecap: round; stroke-linejoin: round; }}\n'
     svg += '    .c-area { fill: url(#area-grad); stroke: none; }\n'
-    svg += '    .c-point { fill: #0d9488; stroke: #ffffff; stroke-width: 2; }\n'
-    svg += '    .c-point-val { font-family: "Inter", "Helvetica Neue", sans-serif; font-size: 9px; fill: #0d9488; font-weight: 600; text-anchor: middle; }\n'
+    svg += f'    .c-point {{ fill: {point_col}; stroke: #ffffff; stroke-width: 2; }}\n'
+    svg += f'    .c-point-val {{ font-family: "Inter", "Helvetica Neue", sans-serif; font-size: 9px; fill: {line_col}; font-weight: 600; text-anchor: middle; }}\n'
     svg += '  </style>\n'
     
     svg += '  <defs>\n'
     svg += '    <linearGradient id="area-grad" x1="0" y1="0" x2="0" y2="1">\n'
-    svg += '      <stop offset="0%" stop-color="#0d9488" stop-opacity="0.35"/>\n'
-    svg += '      <stop offset="100%" stop-color="#0d9488" stop-opacity="0.0"/>\n'
+    svg += f'      <stop offset="0%" stop-color="{line_col}" stop-opacity="0.35"/>\n'
+    svg += f'      <stop offset="100%" stop-color="{line_col}" stop-opacity="0.0"/>\n'
     svg += '    </linearGradient>\n'
     svg += '  </defs>\n'
     
@@ -305,7 +370,8 @@ def draw_line_chart(title, labels, values, x_label, y_label, area=False):
         svg += f'  <path d="{line_path}" class="c-line" />\n'
         
     for i, (x, y, val) in enumerate(points):
-        svg += f'  <circle cx="{x}" cy="{y}" r="4.5" class="c-point" />\n'
+        p_c = colors[i % len(colors)]
+        svg += f'  <circle cx="{x}" cy="{y}" r="4.5" class="c-point" style="fill: {p_c};" />\n'
         svg += f'  <text x="{x}" y="{y - 7}" class="c-point-val">{val:g}</text>\n'
         lbl = labels[i]
         if len(lbl) > 12:
@@ -323,7 +389,7 @@ def draw_line_chart(title, labels, values, x_label, y_label, area=False):
     svg += '</svg>\n'
     return svg
 
-def generate_svg_chart(chart_data: dict) -> str:
+def generate_svg_chart(chart_data: dict, theme=None) -> str:
     chart_type = chart_data.get("type", "bar").lower()
     title = chart_data.get("title", "")
     labels = chart_data.get("labels", [])
@@ -340,22 +406,22 @@ def generate_svg_chart(chart_data: dict) -> str:
         return "<!-- Invalid numeric data in chart -->"
         
     if chart_type in ("donut", "pie"):
-        return draw_donut_chart(title, labels, values)
+        return draw_donut_chart(title, labels, values, theme=theme)
     elif chart_type == "line":
-        return draw_line_chart(title, labels, values, x_label, y_label, area=False)
+        return draw_line_chart(title, labels, values, x_label, y_label, area=False, theme=theme)
     elif chart_type == "area":
-        return draw_line_chart(title, labels, values, x_label, y_label, area=True)
+        return draw_line_chart(title, labels, values, x_label, y_label, area=True, theme=theme)
     else:
-        return draw_bar_chart(title, labels, values, x_label, y_label)
+        return draw_bar_chart(title, labels, values, x_label, y_label, theme=theme)
 
-def process_charts(markdown_content: str) -> str:
+def process_charts(markdown_content: str, theme=None) -> str:
     pattern = r"```json-chart\s*\n(.*?)\n\s*```"
     
     def replacer(match):
         json_str = match.group(1)
         try:
             chart_data = json.loads(json_str)
-            svg_content = generate_svg_chart(chart_data)
+            svg_content = generate_svg_chart(chart_data, theme=theme)
             return f'<div class="chart-container">{svg_content}</div>'
         except Exception as e:
             return f'<div class="chart-error">Chart Rendering Error: {str(e)}</div>'
@@ -611,12 +677,41 @@ def inject_page_breaks(html_content: str) -> str:
     
     return html_content
 
+def ensure_live_links(html_content: str) -> str:
+    """Converts unlinked URLs in HTML content into active clickable <a> links."""
+    url_pattern = r'(?<!href=")(?<!src=")(?<!">)(https?://[^\s<>"\'()]+)'
+    return re.sub(url_pattern, r'<a href="\1" target="_blank" rel="noopener noreferrer">\1</a>', html_content)
+
+def colorize_kpi_cards(html_content: str, theme: dict) -> str:
+    """Applies cohesive single color theme template styling across KPI cards."""
+    card_pattern = r'<div class="kpi-card">\s*<span class="kpi-title">(.*?)</span>\s*<span class="kpi-value">(.*?)</span>\s*<span class="kpi-desc">(.*?)</span>\s*</div>'
+    
+    matches = list(re.finditer(card_pattern, html_content, flags=re.DOTALL))
+    if not matches:
+        return html_content
+        
+    primary = theme.get("primary", "#0d9488")
+    dark = theme.get("dark", "#0f766e")
+    
+    for i, match in enumerate(matches):
+        title, val, desc = match.group(1), match.group(2), match.group(3)
+        
+        replacement = f'''<div class="kpi-card" style="border-top: 4px solid {primary}; background: #ffffff; border-radius: 12px; padding: 18px 14px; box-shadow: 0 4px 14px rgba(0, 0, 0, 0.04); text-align: center;">
+            <span class="kpi-title" style="color: #64748b; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; display: block; margin-bottom: 6px;">{title}</span>
+            <span class="kpi-value" style="color: {primary}; font-size: 26px; font-weight: 800; font-family: 'Space Grotesk', sans-serif; display: block; margin-bottom: 4px;">{val}</span>
+            <span class="kpi-desc" style="color: {dark}; font-size: 11px; font-weight: 500; display: block; margin-top: 4px;">{desc}</span>
+        </div>'''
+        html_content = html_content.replace(match.group(0), replacement, 1)
+        
+    return html_content
+
 def generate_pdf_report(markdown_content: str, run_id: str) -> tuple[str, int]:
     """Converts Markdown text to a highly-styled consulting-firm grade PDF report."""
+    theme = get_theme_for_run(run_id)
     
     cover_data, body_markdown = extract_cover_data(markdown_content)
     body_markdown = ensure_markdown_spacing(body_markdown)
-    body_markdown = process_charts(body_markdown)
+    body_markdown = process_charts(body_markdown, theme=theme)
     body_markdown = process_images(body_markdown)  
     raw_html = markdown.markdown(body_markdown, extensions=['tables', 'fenced_code'])
     
@@ -627,11 +722,15 @@ def generate_pdf_report(markdown_content: str, run_id: str) -> tuple[str, int]:
     raw_html = re.sub(r'(<span[^>]*>\s*)\*\*(.*?)\*\*(\s*</span>)', r'\1\2\3', raw_html)
     raw_html = re.sub(r'(<span[^>]*>\s*)\*(.*?)\*(\s*</span>)', r'\1\2\3', raw_html)
     
+    # Colorize KPI cards with chosen single color theme template
+    raw_html = colorize_kpi_cards(raw_html, theme)
+    
     # Convert main numbered headings & References to h1
     raw_html = convert_headings(raw_html)
     
     raw_html = process_toc(raw_html)
     raw_html = inject_page_breaks(raw_html)
+    raw_html = ensure_live_links(raw_html)
     
     cover_html = f"""
     <div class="cover-page">
@@ -645,8 +744,8 @@ def generate_pdf_report(markdown_content: str, run_id: str) -> tuple[str, int]:
             <svg class="cover-illustration" viewBox="0 0 400 200" width="100%" height="200" xmlns="http://www.w3.org/2000/svg">
                 <defs>
                     <linearGradient id="grid-grad" x1="0%" y1="0%" x2="100%" y2="100%">
-                        <stop offset="0%" stop-color="#2dd4bf" stop-opacity="0.85"/>
-                        <stop offset="100%" stop-color="#0f766e" stop-opacity="0.1"/>
+                        <stop offset="0%" stop-color="#14b8a6" stop-opacity="0.85"/>
+                        <stop offset="100%" stop-color="#6366f1" stop-opacity="0.2"/>
                     </linearGradient>
                 </defs>
                 <path d="M 50 150 L 150 50 L 250 150 L 350 50" stroke="url(#grid-grad)" stroke-width="2.5" fill="none"/>
@@ -655,8 +754,8 @@ def generate_pdf_report(markdown_content: str, run_id: str) -> tuple[str, int]:
                 <circle cx="250" cy="150" r="5" fill="#2dd4bf"/>
                 <circle cx="350" cy="50" r="5" fill="#2dd4bf"/>
                 <circle cx="50" cy="150" r="5" fill="#2dd4bf"/>
-                <circle cx="150" cy="50" r="10" fill="#2dd4bf" fill-opacity="0.2"/>
-                <circle cx="250" cy="150" r="10" fill="#2dd4bf" fill-opacity="0.2"/>
+                <circle cx="150" cy="50" r="10" fill="#2dd4bf" fill-opacity="0.25"/>
+                <circle cx="250" cy="150" r="10" fill="#2dd4bf" fill-opacity="0.25"/>
             </svg>
         </div>
         
@@ -676,7 +775,7 @@ def generate_pdf_report(markdown_content: str, run_id: str) -> tuple[str, int]:
             @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap');
             
             @page {{
-                size: A4;
+                size: A4 portrait;
                 margin: 2.8cm 2cm 2.8cm 2cm;
                 @top-left {{
                     content: none;
@@ -699,14 +798,18 @@ def generate_pdf_report(markdown_content: str, run_id: str) -> tuple[str, int]:
             }}
             
             @page :first {{
-                margin: 0;
+                size: A4 portrait;
+                margin: 0 !important;
+                padding: 0 !important;
                 @top-left {{ content: none; }}
                 @top-right {{ content: none; }}
                 @bottom-left {{ content: none; }}
                 @bottom-right {{ content: none; }}
             }}
             
-            body {{
+            html, body {{
+                margin: 0 !important;
+                padding: 0 !important;
                 font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif;
                 line-height: 1.6;
                 color: #334155;
@@ -716,13 +819,18 @@ def generate_pdf_report(markdown_content: str, run_id: str) -> tuple[str, int]:
             /* Cover Page Styles */
             .cover-page {{
                 page-break-after: always;
-                height: 29.7cm;
-                width: 21.0cm;
+                page-break-inside: avoid;
+                height: 297mm;
+                max-height: 297mm;
+                width: 210mm;
+                max-width: 210mm;
+                margin: 0 !important;
+                padding: 3.5cm 2.2cm 2cm 2.2cm;
+                box-sizing: border-box;
+                overflow: hidden;
                 background: linear-gradient(135deg, #081115 0%, #030712 100%);
                 color: #f8fafc;
                 position: relative;
-                padding: 4.5cm 2.2cm 2cm 2.2cm;
-                box-sizing: border-box;
             }}
             .cover-accent-bar {{
                 position: absolute;
@@ -730,7 +838,7 @@ def generate_pdf_report(markdown_content: str, run_id: str) -> tuple[str, int]:
                 left: 0;
                 width: 100%;
                 height: 8px;
-                background: linear-gradient(90deg, #2dd4bf 0%, #0d9488 50%, #6366f1 100%);
+                background: linear-gradient(90deg, #14b8a6 0%, #2dd4bf 35%, #6366f1 70%, #8b5cf6 100%);
             }}
             .cover-classification {{
                 font-size: 10px;
@@ -760,16 +868,16 @@ def generate_pdf_report(markdown_content: str, run_id: str) -> tuple[str, int]:
                 line-height: 1.4;
             }}
             .cover-illustration-container {{
-                margin: 40px 0;
+                margin: 30px 0;
                 opacity: 0.95;
             }}
             .cover-metadata {{
                 position: absolute;
-                bottom: 2.5cm;
+                bottom: 1.8cm;
                 left: 2.2cm;
                 right: 2.2cm;
                 border-top: 1px solid rgba(255, 255, 255, 0.12);
-                padding-top: 25px;
+                padding-top: 20px;
             }}
             .meta-item {{
                 font-size: 11px;
@@ -778,11 +886,127 @@ def generate_pdf_report(markdown_content: str, run_id: str) -> tuple[str, int]:
             }}
             .meta-label {{
                 font-weight: 600;
-                color: #2dd4bf;
+                color: #14b8a6;
                 width: 130px;
                 display: inline-block;
                 text-transform: uppercase;
                 letter-spacing: 0.05em;
+            }}
+            
+            /* General Content Styles */
+            h1, h2, h3, h4 {{
+                font-family: 'Space Grotesk', 'Helvetica Neue', Arial, sans-serif;
+                color: #0f172a;
+                margin-top: 36px;
+                margin-bottom: 16px;
+                page-break-after: avoid;
+            }}
+            h1 {{
+                font-size: 24px;
+                border-bottom: 2px solid {theme['primary']};
+                padding-bottom: 8px;
+                margin-top: 45px;
+            }}
+            h2 {{
+                font-size: 18px;
+                border-bottom: 1.5px solid #cbd5e1;
+                padding-bottom: 8px;
+                margin-top: 36px;
+            }}
+            h3 {{
+                font-size: 14px;
+                color: {theme['primary']};
+                margin-top: 28px;
+            }}
+            p {{
+                margin-top: 0;
+                margin-bottom: 20px;
+                text-align: justify;
+            }}
+            ul, ol {{
+                margin-top: 0;
+                margin-bottom: 18px;
+                padding-left: 20px;
+            }}
+            li {{
+                margin-bottom: 6px;
+            }}
+            a {{
+                color: {theme['primary']};
+                text-decoration: underline;
+                word-break: break-all;
+            }}
+            a:hover {{
+                color: {theme['dark']};
+            }}
+            
+            /* Table of Contents Styles */
+            .toc-list {{
+                list-style: none;
+                padding: 0;
+                margin: 25px 0;
+            }}
+            .toc-list li {{
+                position: relative;
+                margin-bottom: 12px;
+                font-size: 14px;
+            }}
+            .toc-list li a {{
+                display: block;
+                position: relative;
+                text-decoration: none;
+                color: #1e293b;
+                overflow: hidden;
+            }}
+            .toc-list li a::after {{
+                content: target-counter(attr(href), page);
+                position: absolute;
+                right: 0;
+                bottom: 0;
+                background: #ffffff;
+                padding-left: 6px;
+                font-weight: 700;
+                color: {theme['primary']};
+            }}
+            .toc-list li a::before {{
+                content: "..........................................................................................................................................................................................................................";
+                position: absolute;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                color: #cbd5e1;
+                z-index: 0;
+            }}
+            .toc-list li a span {{
+                background: #ffffff;
+                position: relative;
+                z-index: 1;
+                padding-right: 6px;
+                font-weight: 500;
+            }}
+            
+            /* Callout & blockquote styles */
+            blockquote {{
+                margin: 20px 0;
+                padding: 15px 20px;
+                background-color: {theme['light']};
+                border-left: 4px solid {theme['primary']};
+                border-radius: 0 8px 8px 0;
+                font-size: 14px;
+                color: {theme['dark']};
+                line-height: 1.5;
+            }}
+            blockquote p {{
+                margin-bottom: 0;
+            }}
+            
+            .callout-info {{
+                margin: 20px 0;
+                padding: 15px 20px;
+                background-color: {theme['light']};
+                border-left: 4px solid {theme['primary']};
+                border-radius: 0 8px 8px 0;
+                color: {theme['dark']};
             }}
             
             /* General Content Styles */
@@ -822,6 +1046,14 @@ def generate_pdf_report(markdown_content: str, run_id: str) -> tuple[str, int]:
             }}
             li {{
                 margin-bottom: 6px;
+            }}
+            a {{
+                color: #0d9488;
+                text-decoration: underline;
+                word-break: break-all;
+            }}
+            a:hover {{
+                color: #0f766e;
             }}
             
             /* Table of Contents Styles */
