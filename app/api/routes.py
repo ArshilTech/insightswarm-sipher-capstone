@@ -178,7 +178,7 @@ async def list_research_runs(
     
     data = []
     for run in runs:
-        agents_count = 5 if run.depth == "deep" else 3
+        agents_count = 5
         data.append({
             "id": run.id,
             "title": run.report.title if run.report else f"Research on {run.topic}",
@@ -253,3 +253,42 @@ async def download_report_pdf(
         media_type=report_file.mime_type,
         content_disposition_type="inline" if inline else "attachment"
     )
+
+# --- Report file delete endpoint ---
+@router.delete("/research/{run_id}/report")
+async def delete_report(
+    run_id: str,
+    session: AsyncSession = Depends(get_async_session)
+):
+    # Fetch the research run, report, and associated file so the entire item can be removed.
+    stmt = select(ResearchRun).where(ResearchRun.id == run_id).options(
+        selectinload(ResearchRun.report).selectinload(Report.file)
+    )
+    result = await session.execute(stmt)
+    run = result.scalar_one_or_none()
+
+    if not run:
+        raise HTTPException(status_code=404, detail="Research run not found.")
+
+    report = run.report
+
+    # Delete the associated PDF file from disk if it exists
+    if report and report.file and os.path.exists(report.file.file_path):
+        try:
+            os.remove(report.file.file_path)
+            logger.info(f"Deleted PDF file at {report.file.file_path}")
+        except Exception as e:
+            logger.error(f"Failed to delete PDF file: {e}", exc_info=True)
+            raise HTTPException(status_code=500, detail="Failed to delete PDF file from disk.")
+
+    # Delete the child file row first so the report delete does not hit a FK constraint.
+    if report and report.file:
+        await session.delete(report.file)
+
+    # Delete the report row and the parent research run from the database.
+    if report:
+        await session.delete(report)
+    await session.delete(run)
+    await session.commit()
+
+    return {"detail": "Report and associated PDF deleted successfully."}
