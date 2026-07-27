@@ -376,7 +376,17 @@ def process_charts(markdown_content: str, theme=None) -> str:
             return f'<div class="chart-error">Chart Rendering Error: {str(e)}</div>'
             
     return re.sub(pattern, replacer, markdown_content, flags=re.DOTALL)
+
 def process_images(markdown_content: str) -> str:
+    """
+    Replace every ``[IMAGE: <query>]`` placeholder in *markdown_content*
+    with an inline base64 data-URI ``<img>`` tag.
+
+    Images are fetched via :func:`download_image`, which returns a file path.
+    The MIME type is guessed from the file extension to build the correct
+    data-URI prefix. No filesystem cleanup is performed here.
+    """
+    import mimetypes
 
     pattern = r"\[IMAGE:(.*?)\]"
 
@@ -384,12 +394,17 @@ def process_images(markdown_content: str) -> str:
 
     print(f"\nFound {len(matches)} image placeholders")
 
-    # Maximum number of images in one report
+    # Maximum number of images embedded per report
     MAX_IMAGES = 3
 
-    used_queries = set()
-    used_image_hashes = set()
+    used_queries: set[str] = set()
     images_added = 0
+
+    def _remove_placeholder(content: str, query: str) -> str:
+        """Erase both spaced and non-spaced variants of the placeholder."""
+        content = content.replace(f"[IMAGE: {query}]", "", 1)
+        content = content.replace(f"[IMAGE:{query}]", "", 1)
+        return content
 
     for query in matches:
 
@@ -397,62 +412,45 @@ def process_images(markdown_content: str) -> str:
 
         # Skip duplicate search queries
         if query.lower() in used_queries:
-            markdown_content = markdown_content.replace(
-                f"[IMAGE: {query}]",
-                "",
-                1
-            )
-            markdown_content = markdown_content.replace(
-                f"[IMAGE:{query}]",
-                "",
-                1
-            )
+            markdown_content = _remove_placeholder(markdown_content, query)
             continue
 
         # Stop after maximum images
         if images_added >= MAX_IMAGES:
-
-            markdown_content = markdown_content.replace(
-                f"[IMAGE: {query}]",
-                "",
-                1
-            )
-            markdown_content = markdown_content.replace(
-                f"[IMAGE:{query}]",
-                "",
-                1
-            )
+            markdown_content = _remove_placeholder(markdown_content, query)
             continue
 
-        print(f"Downloading: {query}")
+        print(f"[PDF] Fetching image for: {query}")
 
         image_path = download_image(query)
 
         if image_path is None:
-
-            markdown_content = markdown_content.replace(
-                f"[IMAGE: {query}]",
-                "",
-                1
-            )
-            markdown_content = markdown_content.replace(
-                f"[IMAGE:{query}]",
-                "",
-                1
-            )
-
+            markdown_content = _remove_placeholder(markdown_content, query)
             continue
 
-        with open(image_path, "rb") as img:
+        # Check that the file has actual content
+        try:
+            file_size = os.path.getsize(image_path)
+        except OSError:
+            markdown_content = _remove_placeholder(markdown_content, query)
+            continue
 
-            encoded = base64.b64encode(
-                img.read()
-            ).decode()
+        if file_size == 0:
+            markdown_content = _remove_placeholder(markdown_content, query)
+            continue
+
+        # Guess MIME type from the file extension
+        mime_type, _ = mimetypes.guess_type(image_path)
+        if mime_type is None or not mime_type.startswith("image/"):
+            mime_type = "image/jpeg"
+
+        with open(image_path, "rb") as img:
+            encoded = base64.b64encode(img.read()).decode()
 
         html = f"""
 <div style="text-align:center; margin:35px 0;">
 <img
-src="data:image/jpeg;base64,{encoded}"
+src="data:{mime_type};base64,{encoded}"
 style="
 max-width:70%;
 max-height:420px;
@@ -465,25 +463,20 @@ margin:auto;
 """
 
         markdown_content = markdown_content.replace(
-            f"[IMAGE: {query}]",
-            html,
-            1
+            f"[IMAGE: {query}]", html, 1
         )
-
         markdown_content = markdown_content.replace(
-            f"[IMAGE:{query}]",
-            html,
-            1
+            f"[IMAGE:{query}]", html, 1
         )
 
         used_queries.add(query.lower())
-
         images_added += 1
 
-    # Remove any remaining placeholders
+    # Remove any remaining placeholders that were not processed
     markdown_content = re.sub(pattern, "", markdown_content)
 
     return markdown_content
+
 def extract_cover_data(markdown_content: str) -> tuple[dict, str]:
     cover_data = {
         "title": "Corporate Strategy & Intelligence Report",
@@ -1260,3 +1253,4 @@ def generate_pdf_report(markdown_content: str, run_id: str) -> tuple[str, int]:
         raise OSError(f"Failed to generate and save PDF report to '{file_path}': {str(e)}")
         
     return file_path, page_count
+

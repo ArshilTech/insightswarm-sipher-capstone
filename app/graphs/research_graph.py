@@ -237,43 +237,43 @@ Rules:
 # Ensure at least a few image placeholders exist
 # -----------------------------------------------------------------
 
-    if "[IMAGE:" not in draft:
+    import re
 
-        import re
+    # ── Ensure exactly 3 image placeholders are present in the draft ──────────
+    TARGET_IMAGES = 3
 
-        section_images = {
-            "Introduction": f"{state['topic']} overview",
-            "Market Landscape": f"{state['topic']} architecture",
-            "Case Studies": f"{state['topic']} case study",
-            "Future Trends": f"{state['topic']} future technology",
-        }
+    # Count how many [IMAGE: ...] placeholders the LLM already inserted
+    existing_count = len(re.findall(r"\[IMAGE:", draft))
 
-        for keyword, query in section_images.items():
+    if existing_count < TARGET_IMAGES:
+        # Ordered pool of fallback (section-keyword → search query) pairs
+        section_images = [
+            ("Introduction",    f"{state['topic']} overview"),
+            ("Market Landscape", f"{state['topic']} market"),
+            ("Case Studies",    f"{state['topic']} case study"),
+            ("Future Trends",   f"{state['topic']} future technology"),
+            ("Best Practices",  f"{state['topic']} best practices"),
+            ("Conclusion",      f"{state['topic']} summary"),
+        ]
+
+        needed = TARGET_IMAGES - existing_count
+
+        for keyword, query in section_images:
+            if needed <= 0:
+                break
 
             pattern = rf"(^#+\s.*{re.escape(keyword)}.*$)"
-
-            match = re.search(
-                pattern, 
-                draft, 
-                flags=re.IGNORECASE | re.MULTILINE)
+            match = re.search(pattern, draft, flags=re.IGNORECASE | re.MULTILINE)
 
             if match:
-
                 heading = match.group(1)
-
-                replacement = (
-                    f"{heading}\n\n"
-                    f"[IMAGE: {query}]"
-                )
-
-                draft = draft.replace(
-                    heading,
-                    replacement,
-                    1
-                )
-        
-
-    
+                # Only inject if this heading doesn't already have an image right after it
+                heading_pos = draft.find(heading)
+                after_heading = draft[heading_pos + len(heading):heading_pos + len(heading) + 120]
+                if "[IMAGE:" not in after_heading:
+                    replacement = f"{heading}\n\n[IMAGE: {query}]"
+                    draft = draft.replace(heading, replacement, 1)
+                    needed -= 1
 
     return {"draft": draft}
 
@@ -366,3 +366,4 @@ def build_research_graph():
 
 # Instantiate the graph so it can be imported elsewhere
 research_graph = build_research_graph()
+
