@@ -6,6 +6,10 @@ from typing import Any
 from app.models.schemas import ResearchRequest, ResearchRunResponse, ReportResponse, ReportFileResponse
 from app.models.models import ResearchRun, Report, ReportFile
 
+from app.models.models import ExecutiveSummary
+from app.models.schemas import ExecutiveSummaryResponse
+from app.services.summary_service import generate_executive_summary_text, generate_executive_summary_pdf
+
 from app.graphs.research_graph import research_graph, ResearchState
 
 from app.db.database import async_session_maker
@@ -251,6 +255,88 @@ async def download_report_pdf(
         path=report_file.file_path,
         filename=report_file.filename,
         media_type=report_file.mime_type,
+        content_disposition_type="inline" if inline else "attachment"
+    )
+
+# --- Executive Summary generation endpoint ---
+# Uses only the already-generated report's markdown — never re-invokes the research graph.
+@router.post("/research/{run_id}/executive-summary", response_model=ExecutiveSummaryResponse)
+async def create_executive_summary(
+    run_id: str,
+    session: AsyncSession = Depends(get_async_session)
+):
+    stmt = select(Report).where(Report.run_id == run_id).options(selectinload(Report.executive_summary))
+    result = await session.execute(stmt)
+    report = result.scalar_one_or_none()
+
+    if not report:
+        raise HTTPException(status_code=404, detail="Report not found for this run.")
+
+    # Avoid a redundant LLM call if a summary was already generated for this report
+    if report.executive_summary:
+        existing = report.executive_summary
+        return {
+            "id": existing.id,
+            "run_id": run_id,
+            "content_markdown": existing.content_markdown,
+            "download_url": f"/api/research/{run_id}/executive-summary/download" if existing.pdf_file_path else None
+        }
+
+    raw_markdown = (report.content_json or {}).get("raw_markdown", "")
+    if not raw_markdown:
+        raise HTTPException(status_code=400, detail="Report has no content to summarize.")
+
+    summary_logger = get_run_logger(__name__, run_id)
+    try:
+        summary_markdown = generate_executive_summary_text(raw_markdown)
+    except Exception as e:
+        summary_logger.error(f"Executive summary generation failed: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Failed to generate executive summary.")
+
+    pdf_path = None
+    try:
+        pdf_path = generate_executive_summary_pdf(summary_markdown, run_id)
+    except Exception as e:
+        summary_logger.error(f"Executive summary PDF generation failed: {e}", exc_info=True)
+        # Continue without a PDF — the markdown summary is still usable in the UI
+
+    new_summary = ExecutiveSummary(
+        report_id=report.id,
+        content_markdown=summary_markdown,
+        pdf_file_path=pdf_path
+    )
+    session.add(new_summary)
+    await session.commit()
+    await session.refresh(new_summary)
+
+    return {
+        "id": new_summary.id,
+        "run_id": run_id,
+        "content_markdown": new_summary.content_markdown,
+        "download_url": f"/api/research/{run_id}/executive-summary/download" if pdf_path else None
+    }
+
+# --- Executive Summary file download endpoint ---
+@router.get("/research/{run_id}/executive-summary/download")
+async def download_executive_summary_pdf(
+    run_id: str,
+    inline: bool = False,
+    session: AsyncSession = Depends(get_async_session)
+):
+    stmt = select(ExecutiveSummary).join(Report).where(Report.run_id == run_id)
+    result = await session.execute(stmt)
+    summary = result.scalars().first()
+
+    if not summary or not summary.pdf_file_path:
+        raise HTTPException(status_code=404, detail="Executive summary PDF not found.")
+
+    if not os.path.exists(summary.pdf_file_path):
+        raise HTTPException(status_code=500, detail="Executive summary PDF record exists, but file is missing from disk.")
+
+    return FileResponse(
+        path=summary.pdf_file_path,
+        filename=f"{run_id}_executive_summary.pdf",
+        media_type="application/pdf",
         content_disposition_type="inline" if inline else "attachment"
     )
 

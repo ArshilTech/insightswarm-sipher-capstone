@@ -39,6 +39,7 @@ class Report(Base):
 
     run: Mapped[ResearchRun] = relationship("ResearchRun", back_populates="report")
     file: Mapped["ReportFile | None"] = relationship("ReportFile", back_populates="report", uselist=False)
+    executive_summary: Mapped["ExecutiveSummary | None"] = relationship("ExecutiveSummary", back_populates="report", uselist=False)
 
 class ReportFile(Base):
     __tablename__ = "report_files"
@@ -50,3 +51,14 @@ class ReportFile(Base):
     mime_type: Mapped[str] = mapped_column(String, default="application/pdf")
 
     report: Mapped[Report] = relationship("Report", back_populates="file")
+
+class ExecutiveSummary(Base):
+    __tablename__ = "executive_summaries"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=generate_uuid)
+    report_id: Mapped[str] = mapped_column(String, ForeignKey("reports.id"), nullable=False)
+    content_markdown: Mapped[str] = mapped_column(Text, nullable=False)
+    pdf_file_path: Mapped[str | None] = mapped_column(String, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+    report: Mapped[Report] = relationship("Report", back_populates="executive_summary")

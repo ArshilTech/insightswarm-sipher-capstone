@@ -50,3 +50,12 @@ class ReportResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+class ExecutiveSummaryResponse(BaseModel):
+    id: str
+    run_id: str
+    content_markdown: str
+    download_url: Optional[str] = None
+
+    class Config:
+        from_attributes = True
