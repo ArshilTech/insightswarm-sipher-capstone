@@ -304,7 +304,7 @@ export default function ReportPage() {
           </button>
         </motion.div>
         {execSummary && (
-          <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="mt-4 rounded-xl border border-teal-100 bg-teal-50/40 p-4 max-h-64 overflow-y-auto">
+          <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="mt-4 rounded-xl border border-teal-100 bg-teal-50/40 p-4">
             <div className="flex items-center justify-between mb-2">
               <span className="font-mono text-[10px] tracking-widest text-teal-700 uppercase font-bold">Executive Summary</span>
               {execSummary.download_url && (
@@ -313,7 +313,6 @@ export default function ReportPage() {
                 </button>
               )}
             </div>
-            <pre className="whitespace-pre-wrap font-sans text-xs text-slate-700 leading-relaxed">{execSummary.content_markdown}</pre>
           </motion.div>
         )}
       </div>
