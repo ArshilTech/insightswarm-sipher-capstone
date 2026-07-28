@@ -508,7 +508,7 @@ def extract_cover_data(markdown_content: str) -> tuple[dict, str]:
     return cover_data, remaining
 
 def convert_headings(html_content: str) -> str:
-    # Convert numbered h2 headings (e.g. 1. Introduction) to h1
+    # Convert numbered h2 headings (e.g. 1. Introduction) to h1 preserving any id attribute
     html_content = re.sub(
         r'<h2([^>]*)>\s*(\d+)\.\s+(.*?)</h2\s*>',
         r'<h1\1>\2. \3</h1>',
@@ -518,7 +518,63 @@ def convert_headings(html_content: str) -> str:
     # Convert References h2 heading to h1
     html_content = re.sub(
         r'<h2([^>]*)>\s*References\s*</h2\s*>',
-        r'<h1\1>References</h1>',
+        r'<h1 id="references"\1>References</h1>',
+        html_content,
+        flags=re.IGNORECASE
+    )
+    return html_content
+
+def fix_heading_and_toc_ids(html_content: str) -> str:
+    """
+    Ensures headings have clean IDs matching TOC hrefs, and References heading has id="references".
+    """
+    def heading_replacer(match):
+        h_tag = match.group(1) # h1 or h2
+        attrs = match.group(2) # existing attrs
+        num = match.group(3)   # 1
+        title = match.group(4) # Introduction & Background
+        clean_title = re.sub(r'<[^>]+>', '', title)
+        slug = f"{num}-{re.sub(r'[^a-z0-9]+', '-', clean_title.lower()).strip('-')}"
+        if 'id="' not in attrs:
+            attrs = f' id="{slug}"' + attrs
+        return f'<{h_tag}{attrs}>{num}. {title}</{h_tag}>'
+
+    html_content = re.sub(
+        r'<(h[12])([^>]*)>\s*(\d+)\.\s+(.*?)</\1>',
+        heading_replacer,
+        html_content,
+        flags=re.IGNORECASE
+    )
+
+    # Ensure References heading has id="references"
+    html_content = re.sub(
+        r'<(h[12])([^>]*)>\s*References\s*</\1>',
+        r'<h1 id="references">References</h1>',
+        html_content,
+        flags=re.IGNORECASE
+    )
+
+    # Replace TOC hrefs so they match the generated heading IDs
+    def toc_item_replacer(match):
+        full_li = match.group(0)
+        href = match.group(1)
+        text = match.group(2)
+        clean_text = text.strip()
+        if clean_text.lower() == "references":
+            new_href = "#references"
+        else:
+            num_match = re.match(r'^(\d+)\.\s*(.*)', clean_text)
+            if num_match:
+                num = num_match.group(1)
+                t = num_match.group(2)
+                new_href = f"#{num}-{re.sub(r'[^a-z0-9]+', '-', t.lower()).strip('-')}"
+            else:
+                new_href = href
+        return f'<li><a href="{new_href}"><span>{clean_text}</span></a></li>'
+
+    html_content = re.sub(
+        r'<li><a\s+href="([^"]+)">([^<]+)</a></li>',
+        toc_item_replacer,
         html_content,
         flags=re.IGNORECASE
     )
@@ -625,9 +681,98 @@ def inject_page_breaks(html_content: str) -> str:
     return html_content
 
 def ensure_live_links(html_content: str) -> str:
-    """Converts unlinked URLs in HTML content into active clickable <a> links."""
-    url_pattern = r'(?<!href=")(?<!src=")(?<!">)(https?://[^\s<>"\'()]+)'
-    return re.sub(url_pattern, r'<a href="\1" target="_blank" rel="noopener noreferrer">\1</a>', html_content)
+    """
+    Comprehensive link and reference processor for PDF generation.
+    - Ensures heading IDs match TOC href targets.
+    - Adds id="ref-1", id="ref-2" to list items in References section.
+    - Converts in-text citations like [1], [2] into clickable internal links pointing to #ref-1.
+    - Prepends https:// to external hrefs starting with www. or domain names.
+    - Converts unlinked URLs outside HTML tags into clickable <a> links, stripping trailing punctuation.
+    """
+    html_content = fix_heading_and_toc_ids(html_content)
+
+    # 1. Add id="ref-N" to list items in References section
+    def references_block_replacer(match):
+        ref_block = match.group(0)
+        ref_counter = 1
+        def li_replacer(li_match):
+            nonlocal ref_counter
+            li_attrs = li_match.group(1)
+            li_inner = li_match.group(2)
+            if 'id="' not in li_attrs:
+                li_attrs = f' id="ref-{ref_counter}"' + li_attrs
+            res = f'<li{li_attrs}>{li_inner}</li>'
+            ref_counter += 1
+            return res
+            
+        ref_block = re.sub(r'<li([^>]*)>(.*?)</li>', li_replacer, ref_block, flags=re.DOTALL | re.IGNORECASE)
+        return ref_block
+
+    html_content = re.sub(
+        r'<div class="references-section">.*?</div>',
+        references_block_replacer,
+        html_content,
+        flags=re.DOTALL | re.IGNORECASE
+    )
+
+    # 2. Process existing <a> hrefs to ensure absolute http(s):// or anchor #
+    def href_fixer(match):
+        full_a = match.group(0)
+        href = match.group(1)
+        if href.startswith('#') or href.startswith('http://') or href.startswith('https://') or href.startswith('mailto:'):
+            return full_a
+        elif href.startswith('www.') or re.match(r'^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}', href):
+            fixed_href = f'https://{href}'
+            return full_a.replace(f'href="{href}"', f'href="{fixed_href}"')
+        return full_a
+
+    html_content = re.sub(r'<a\s+[^>]*href="([^"]+)"[^>]*>', href_fixer, html_content, flags=re.IGNORECASE)
+
+    # 3. Convert unlinked URLs outside of HTML tags & code blocks
+    def linkify_text(html):
+        url_pattern = r'(?<!href=")(?<!src=")(?<!">)(?<!\w)(https?://[^\s<>"\'()]+|www\.[^\s<>"\'()]+)'
+        
+        def url_sub(m):
+            raw_url = m.group(1)
+            clean_url = raw_url
+            trailing_punct = ""
+            while clean_url and clean_url[-1] in '.,;:!?)]':
+                trailing_punct = clean_url[-1] + trailing_punct
+                clean_url = clean_url[:-1]
+                
+            if not clean_url:
+                return raw_url
+                
+            href = clean_url if clean_url.startswith('http') else f'https://{clean_url}'
+            return f'<a href="{href}" target="_blank" rel="noopener noreferrer">{clean_url}</a>{trailing_punct}'
+
+        parts = re.split(r'(<a\s+[^>]*>.*?</a>|<code[^>]*>.*?</code>|<script[^>]*>.*?</script>)', html, flags=re.DOTALL | re.IGNORECASE)
+        for i in range(len(parts)):
+            if not parts[i].lower().startswith(('<a ', '<code', '<script')):
+                parts[i] = re.sub(url_pattern, url_sub, parts[i])
+        return "".join(parts)
+
+    html_content = linkify_text(html_content)
+
+    # 4. Convert in-text citation numbers like [1], [2], [1, 2] into internal links
+    parts = re.split(r'(<div class="references-section">.*?</div>|<a\s+[^>]*>.*?</a>)', html_content, flags=re.DOTALL | re.IGNORECASE)
+    
+    def cite_replacer(m):
+        content = m.group(1)
+        nums = [n.strip() for n in content.split(',')]
+        links = []
+        for n in nums:
+            if n.isdigit():
+                links.append(f'<a href="#ref-{n}" class="citation-link">[{n}]</a>')
+            else:
+                return f'[{content}]'
+        return " ".join(links)
+
+    for i in range(len(parts)):
+        if not parts[i].lower().startswith(('<div class="references-section"', '<a ')):
+            parts[i] = re.sub(r'\[(\d+(?:\s*,\s*\d+)*)\](?!\s*\()', cite_replacer, parts[i])
+
+    return "".join(parts)
 
 def colorize_kpi_cards(html_content: str, theme: dict | None = None) -> str:
     """Preserves the existing KPI card markup while using the fixed report palette."""
@@ -660,7 +805,7 @@ def generate_pdf_report(markdown_content: str, run_id: str) -> tuple[str, int]:
     body_markdown = ensure_markdown_spacing(body_markdown)
     body_markdown = process_charts(body_markdown, theme=theme)
     body_markdown = process_images(body_markdown)  
-    raw_html = markdown.markdown(body_markdown, extensions=['tables', 'fenced_code'])
+    raw_html = markdown.markdown(body_markdown, extensions=['tables', 'fenced_code', 'toc'])
     
     # Remove KPI Dashboard heading entirely to match Demo design (where the cards render below TOC directly)
     raw_html = re.sub(r'<h[12][^>]*>.*?KPI Dashboard.*?</h[12]>\s*', '', raw_html, flags=re.IGNORECASE)
@@ -906,30 +1051,9 @@ def generate_pdf_report(markdown_content: str, run_id: str) -> tuple[str, int]:
                 color: #1e293b;
                 overflow: hidden;
             }}
-            .toc-list li a::after {{
-                content: target-counter(attr(href), page);
-                position: absolute;
-                right: 0;
-                bottom: 0;
-                background: #ffffff;
-                padding-left: 6px;
-                font-weight: 700;
-                color: {theme['primary']};
-            }}
-            .toc-list li a::before {{
-                content: "..........................................................................................................................................................................................................................";
-                position: absolute;
-                left: 0;
-                right: 0;
-                bottom: 0;
-                color: #cbd5e1;
-                z-index: 0;
-            }}
             .toc-list li a span {{
-                background: #ffffff;
                 position: relative;
                 z-index: 1;
-                padding-right: 6px;
                 font-weight: 500;
             }}
             
@@ -1022,30 +1146,9 @@ def generate_pdf_report(markdown_content: str, run_id: str) -> tuple[str, int]:
                 color: #1e293b;
                 overflow: hidden;
             }}
-            .toc-list li a::after {{
-                content: target-counter(attr(href), page);
-                position: absolute;
-                right: 0;
-                bottom: 0;
-                background: #ffffff;
-                padding-left: 6px;
-                font-weight: 700;
-                color: #0d9488;
-            }}
-            .toc-list li a::before {{
-                content: "..........................................................................................................................................................................................................................";
-                position: absolute;
-                left: 0;
-                right: 0;
-                bottom: 0;
-                color: #cbd5e1;
-                z-index: 0;
-            }}
             .toc-list li a span {{
-                background: #ffffff;
                 position: relative;
                 z-index: 1;
-                padding-right: 6px;
                 font-weight: 500;
             }}
             
@@ -1223,6 +1326,18 @@ def generate_pdf_report(markdown_content: str, run_id: str) -> tuple[str, int]:
             }}
             .references-section a {{
                 color: {theme['primary']};
+                text-decoration: underline;
+            }}
+            .citation-link {{
+                color: {theme['primary']};
+                font-weight: 600;
+                text-decoration: none;
+                padding: 1px 4px;
+                border-radius: 3px;
+                background-color: {theme['light']};
+            }}
+            .citation-link:hover {{
+                color: {theme['dark']};
                 text-decoration: underline;
             }}
         </style>
