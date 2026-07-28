@@ -11,7 +11,7 @@ const PIPELINE_STEPS = [
   { label: 'Generating Report', icon: 'report', detail: 'Compiling final document' },
 ];
 
-const STEP_DURATION = 3500; // ms per step
+const STEP_DURATION = 4000; // ms per step
 
 function StepIcon({ type, isActive, isCompleted }) {
   const stroke = isCompleted || isActive ? '#0f766e' : '#64748b';
