@@ -99,6 +99,49 @@ export default function SubmitPage() {
   const [contentValid, setContentValid] = useState(true);
   const formRef = useRef(null);
 
+  // Speech-to-text
+  const [isListening, setIsListening] = useState(false);
+  const [speechSupported] = useState(
+    () => typeof window !== 'undefined' && ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window)
+  );
+  const recognitionRef = useRef(null);
+
+  const handleMicClick = () => {
+    if (!speechSupported) return;
+
+    if (isListening) {
+      recognitionRef.current?.stop();
+      setIsListening(false);
+      return;
+    }
+
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const recognition = new SpeechRecognition();
+    recognition.lang = 'en-US';
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
+    recognition.continuous = false;
+
+    recognition.onresult = (event) => {
+      const transcript = event.results[0][0].transcript;
+      const newTopic = topic ? topic + ' ' + transcript : transcript;
+      setTopic(newTopic);
+      validateContent(newTopic, instructions);
+    };
+
+    recognition.onerror = () => {
+      setIsListening(false);
+    };
+
+    recognition.onend = () => {
+      setIsListening(false);
+    };
+
+    recognitionRef.current = recognition;
+    recognition.start();
+    setIsListening(true);
+  };
+
   const validateContent = (topicValue, instructionsValue) => {
     const result = checkQuery(topicValue, instructionsValue);
     setContentValid(result.allowed);
@@ -288,18 +331,48 @@ export default function SubmitPage() {
                   <label className="mb-2 block text-sm font-semibold uppercase tracking-[0.22em] text-teal-700/80" htmlFor="topic-input">
                     Research Topic
                   </label>
-                  <input
-                    id="topic-input"
-                    type="text"
-                    value={topic}
-                    onChange={handleTopicChange}
-                    onFocus={() => setFormFocused(true)}
-                    onBlur={() => setFormFocused(false)}
-                    placeholder="e.g., Impact of quantum computing on cryptography"
-                    className="w-full rounded-2xl border border-teal-900/10 bg-white/80 px-4 py-3.5 text-[15px] text-slate-900 shadow-[inset_0_1px_0_rgba(255,255,255,0.95)] outline-none transition duration-300 placeholder:text-slate-400 focus:border-teal-500 focus:ring-4 focus:ring-teal-500/10"
-                    disabled={loading}
-                    autoComplete="off"
-                  />
+                  <div className="relative">
+                    <input
+                      id="topic-input"
+                      type="text"
+                      value={topic}
+                      onChange={handleTopicChange}
+                      onFocus={() => setFormFocused(true)}
+                      onBlur={() => setFormFocused(false)}
+                      placeholder="e.g., Impact of quantum computing on cryptography"
+                      className="w-full rounded-2xl border border-teal-900/10 bg-white/80 px-4 py-3.5 pr-14 text-[15px] text-slate-900 shadow-[inset_0_1px_0_rgba(255,255,255,0.95)] outline-none transition duration-300 placeholder:text-slate-400 focus:border-teal-500 focus:ring-4 focus:ring-teal-500/10"
+                      disabled={loading}
+                      autoComplete="off"
+                    />
+                    
+                  {speechSupported && (
+  <button
+    type="button"
+    onClick={handleMicClick}
+    disabled={loading}
+    title={isListening ? "Listening..." : "Speak your research topic"}
+    className={`ai-mic-btn ${isListening ? "listening" : ""}`}
+  >
+    <svg
+      className="ai-mic-icon"
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
+      <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+      <line x1="12" y1="19" x2="12" y2="23" />
+      <line x1="8" y1="23" x2="16" y2="23" />
+    </svg>
+  </button>
+)}
+                   
+                  </div>
                 </motion.div>
 
                 <motion.div variants={itemVariants}>
