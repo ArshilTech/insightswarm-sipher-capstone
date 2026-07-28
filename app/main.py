@@ -1,11 +1,15 @@
 import time
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, UploadFile, File, Form
 from app.api.routes import router
 from app.api.dependencies import create_db_and_tables
 from contextlib import asynccontextmanager
 from app.db.database import engine
 from fastapi.middleware.cors import CORSMiddleware
 from app.core import setup_logging, get_logger
+from app.agent import process_pdf_and_ask_question
+
+#--app intialization--
+app = FastAPI
 
 # Setup logging before app creation
 setup_logging()
@@ -53,3 +57,20 @@ app.include_router(router, prefix="/api", tags=["API"])
 def health_check():
     return {"status": "ok"}
 
+
+@app.post("/upload")
+async def upload_pdf(file: UploadFile = File(...)):
+    file_bytes = await file.read()
+    process_pdf_to_db(file_bytes)
+    return {"status": "success"}
+
+
+@app.post("/chat")
+async def chat_with_agent(question: str = Form(...)):
+    answer = ask_agent_question(question)
+    return {"question": question, "answer": answer}
+
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host = "0.0.0.0", port=8000)
