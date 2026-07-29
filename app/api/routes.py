@@ -42,6 +42,8 @@ async def run_research_background(initial_state: ResearchState):
             # Remove the think block and all its contents
             final_markdown = re.sub(r"<think>.*?</think>", "", final_markdown, flags=re.DOTALL).strip()
             final_markdown = clean_latex(final_markdown)
+            final_markdown = ensure_final_references(final_markdown)
+            run_logger.info("Background task: final_markdown contains References heading=%s", bool(re.search(r"(?im)^#{1,3}\s*references\s*[:\s]*$", final_markdown, flags=re.MULTILINE)))
 
             topic = final_state.get("topic", "research_report")
             pdf_path = None
@@ -122,6 +124,30 @@ def clean_latex(text: str) -> str:
     text = re.sub(r'\\([a-zA-Z]+)', r'\1', text)
     
     return text.strip()
+
+
+def ensure_final_references(markdown_text: str) -> str:
+    if re.search(r"(?im)^#{1,3}\s*references\s*[:\s]*$", markdown_text, flags=re.MULTILINE):
+        return markdown_text
+
+    links = re.findall(r'\[([^\]]+)\]\((https?://[^\)]+)\)', markdown_text)
+    if not links:
+        return markdown_text
+
+    unique_links = []
+    seen = set()
+    for title, url in links:
+        item = f"[{title}]({url})"
+        if item not in seen:
+            seen.add(item)
+            unique_links.append(item)
+
+    if not unique_links:
+        return markdown_text
+
+    return markdown_text.rstrip() + "\n\n## References\n" + "\n".join(
+        f"{index}. {entry}" for index, entry in enumerate(unique_links, start=1)
+    ) + "\n"
 
 # --- API Endpoint to Start Research ---
 

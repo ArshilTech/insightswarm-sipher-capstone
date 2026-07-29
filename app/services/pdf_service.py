@@ -370,6 +370,8 @@ def process_charts(markdown_content: str, theme=None) -> str:
         json_str = match.group(1)
         try:
             chart_data = json.loads(json_str)
+            if chart_data.get("type", "").lower() in {"donut", "pie"}:
+                return ""
             svg_content = generate_svg_chart(chart_data, theme=theme)
             return f'<div class="chart-container">{svg_content}</div>'
         except Exception as e:
@@ -385,7 +387,7 @@ def process_images(markdown_content: str) -> str:
     print(f"\nFound {len(matches)} image placeholders")
 
     # Maximum number of images in one report
-    MAX_IMAGES = 3
+    MAX_IMAGES = 2
 
     used_queries = set()
     used_image_hashes = set()
