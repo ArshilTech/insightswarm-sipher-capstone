@@ -346,9 +346,10 @@ async def delete_report(
     run_id: str,
     session: AsyncSession = Depends(get_async_session)
 ):
-    # Fetch the research run, report, and associated file so the entire item can be removed.
+    # Fetch the research run, report, and associated files/summaries so the entire item can be removed.
     stmt = select(ResearchRun).where(ResearchRun.id == run_id).options(
-        selectinload(ResearchRun.report).selectinload(Report.file)
+        selectinload(ResearchRun.report).selectinload(Report.file),
+        selectinload(ResearchRun.report).selectinload(Report.executive_summary)
     )
     result = await session.execute(stmt)
     run = result.scalar_one_or_none()
@@ -358,23 +359,25 @@ async def delete_report(
 
     report = run.report
 
-    # Delete the associated PDF file from disk if it exists
-    if report and report.file and os.path.exists(report.file.file_path):
-        try:
-            os.remove(report.file.file_path)
-            logger.info(f"Deleted PDF file at {report.file.file_path}")
-        except Exception as e:
-            logger.error(f"Failed to delete PDF file: {e}", exc_info=True)
-            raise HTTPException(status_code=500, detail="Failed to delete PDF file from disk.")
-
-    # Delete the child file row first so the report delete does not hit a FK constraint.
-    if report and report.file:
-        await session.delete(report.file)
-
-    # Delete the report row and the parent research run from the database.
     if report:
-        await session.delete(report)
+        # Delete main PDF file from disk if it exists
+        if report.file and os.path.exists(report.file.file_path):
+            try:
+                os.remove(report.file.file_path)
+                logger.info(f"Deleted PDF file at {report.file.file_path}")
+            except Exception as e:
+                logger.error(f"Failed to delete PDF file: {e}", exc_info=True)
+
+        # Delete Executive Summary PDF file from disk if it exists
+        if report.executive_summary and report.executive_summary.pdf_file_path and os.path.exists(report.executive_summary.pdf_file_path):
+            try:
+                os.remove(report.executive_summary.pdf_file_path)
+                logger.info(f"Deleted Executive Summary PDF file at {report.executive_summary.pdf_file_path}")
+            except Exception as e:
+                logger.error(f"Failed to delete Executive Summary PDF file: {e}", exc_info=True)
+
+    # Delete the parent research run. Cascade configuration automatically deletes report, report_file, and executive_summary.
     await session.delete(run)
     await session.commit()
 
-    return {"detail": "Report and associated PDF deleted successfully."}
+    return {"detail": "Report and associated files deleted successfully."}
