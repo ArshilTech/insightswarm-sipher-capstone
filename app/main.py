@@ -1,11 +1,14 @@
 import time
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, UploadFile, File, Form
 from app.api.routes import router
 from app.api.dependencies import create_db_and_tables
 from contextlib import asynccontextmanager
 from app.db.database import engine
 from fastapi.middleware.cors import CORSMiddleware
 from app.core import setup_logging, get_logger
+
+#--app initialization--
+app = FastAPI
 
 # Setup logging before app creation
 setup_logging()
@@ -56,3 +59,7 @@ app.include_router(router, prefix="/api", tags=["API"])
 def health_check():
     return {"status": "ok"}
 
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host = "0.0.0.0", port=8000)
