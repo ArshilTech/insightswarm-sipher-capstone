@@ -354,8 +354,8 @@ def generate_svg_chart(chart_data: dict, theme=None) -> str:
     except Exception:
         return "<!-- Invalid numeric data in chart -->"
         
-    if chart_type in ("donut", "pie"):
-        return draw_donut_chart(title, labels, values, theme=theme)
+    if chart_type in ("donut", "pie", "circle"):
+        return ""
     elif chart_type == "line":
         return draw_line_chart(title, labels, values, x_label, y_label, area=False, theme=theme)
     elif chart_type == "area":
@@ -370,7 +370,11 @@ def process_charts(markdown_content: str, theme=None) -> str:
         json_str = match.group(1)
         try:
             chart_data = json.loads(json_str)
+            if chart_data.get("type", "").lower() in ("donut", "pie", "circle"):
+                return ""
             svg_content = generate_svg_chart(chart_data, theme=theme)
+            if not svg_content or svg_content.startswith("<!--"):
+                return ""
             return f'<div class="chart-container">{svg_content}</div>'
         except Exception as e:
             return f'<div class="chart-error">Chart Rendering Error: {str(e)}</div>'
@@ -385,7 +389,7 @@ def process_images(markdown_content: str) -> str:
     print(f"\nFound {len(matches)} image placeholders")
 
     # Maximum number of images in one report
-    MAX_IMAGES = 3
+    MAX_IMAGES = 2
 
     used_queries = set()
     used_image_hashes = set()
@@ -563,6 +567,38 @@ def process_toc(html_content: str) -> str:
     html_content = re.sub(r'<ul class="toc-list">.*?</ul>', wrap_toc_items, html_content, flags=re.DOTALL)
     return html_content
 
+def process_references_and_links(html_content: str) -> str:
+    """Wraps References in a container, strips all <a> links and raw URLs from the References section
+    so they render as formal plain-text citations without any URLs, and applies ensure_live_links only to non-references content."""
+    pattern = r'(<h1[^>]*>\s*References\s*</h1>)(.*?)(?=<h[1-4][^>]*>|\Z)'
+    match = re.search(pattern, html_content, flags=re.DOTALL | re.IGNORECASE)
+    
+    if match:
+        ref_heading = match.group(1)
+        ref_body = match.group(2)
+        
+        # Replace <a href="...">text</a> with text
+        cleaned_ref_body = re.sub(r'<a\s+[^>]*>(.*?)</a>', r'\1', ref_body, flags=re.DOTALL | re.IGNORECASE)
+        # Remove any remaining <a> or </a> tags
+        cleaned_ref_body = re.sub(r'</?a[^>]*>', '', cleaned_ref_body, flags=re.IGNORECASE)
+        # Strip all raw URLs (http:// or https://) and preceding punctuation/hyphens
+        cleaned_ref_body = re.sub(r'[\s\-\–\:\(]*https?://[^\s<>"\'\)]+[\)]?', '', cleaned_ref_body, flags=re.IGNORECASE)
+        # Clean up any empty parentheses or trailing dashes/colons left before </li> or line end
+        cleaned_ref_body = re.sub(r'\s*[\-\–\:]+\s*(?=</li>|\n|\r|$)', '', cleaned_ref_body)
+        cleaned_ref_body = re.sub(r'\(\s*\)', '', cleaned_ref_body)
+        
+        ref_section_html = f'<div class="references-section">{ref_heading}{cleaned_ref_body}</div>'
+        
+        html_before_ref = html_content[:match.start()]
+        html_after_ref = html_content[match.end():]
+        
+        html_before_ref = ensure_live_links(html_before_ref)
+        html_after_ref = ensure_live_links(html_after_ref)
+        
+        return html_before_ref + ref_section_html + html_after_ref
+    else:
+        return ensure_live_links(html_content)
+
 def wrap_references_section(html_content: str) -> str:
     """Wrap the References heading and its body in a dedicated styled container."""
     pattern = r'(<h1[^>]*>\s*References\s*</h1>)(.*?)(?=<h[1-4][^>]*>|\Z)'
@@ -681,11 +717,9 @@ def generate_pdf_report(markdown_content: str, run_id: str) -> tuple[str, int]:
     
     # Convert main numbered headings & References to h1
     raw_html = convert_headings(raw_html)
-    raw_html = wrap_references_section(raw_html)
-    
     raw_html = process_toc(raw_html)
     raw_html = inject_page_breaks(raw_html)
-    raw_html = ensure_live_links(raw_html)
+    raw_html = process_references_and_links(raw_html)
     
     cover_html = f"""
     <div class="cover-page">
@@ -1229,8 +1263,9 @@ def generate_pdf_report(markdown_content: str, run_id: str) -> tuple[str, int]:
                 margin-bottom: 10px;
             }}
             .references-section a {{
-                color: {theme['primary']};
-                text-decoration: underline;
+                color: #334155;
+                text-decoration: none;
+                pointer-events: none;
             }}
         </style>
     </head>

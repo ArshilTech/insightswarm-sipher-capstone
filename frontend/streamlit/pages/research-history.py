@@ -439,8 +439,12 @@ st.markdown(
 """, unsafe_allow_html=True
 )
 
-#---------Fetch data from beckend -------------
+#---------Fetch data from backend -------------
 hisotry_data = fetch_history_data()
+
+# Exclude failed research runs from history view
+if hisotry_data:
+    hisotry_data = [item for item in hisotry_data if item.get("status", "").lower() not in ["failed", "error"]]
 
 #----------Render History List----------------
 if not hisotry_data:

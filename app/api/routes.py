@@ -174,9 +174,12 @@ async def start_research(
 
 @router.get("/research")
 async def list_research_runs(
+    include_failed: bool = False,
     session: AsyncSession = Depends(get_async_session)
 ):
     stmt = select(ResearchRun).options(selectinload(ResearchRun.report)).order_by(ResearchRun.created_at.desc())
+    if not include_failed:
+        stmt = stmt.where(ResearchRun.status != "failed")
     result = await session.execute(stmt)
     runs = result.scalars().all()
     
@@ -191,6 +194,7 @@ async def list_research_runs(
             "agents_used": agents_count
         })
     return {"data": data}
+
 
 # --- API Endpoint to Check Research Status ---
 

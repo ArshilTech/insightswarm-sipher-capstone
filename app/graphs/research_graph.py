@@ -158,11 +158,11 @@ Classification: BUSINESS INTELLIGENCE
    - NO LATEX: WeasyPrint cannot render LaTeX delimiters like $ or $$. Use Unicode characters or plain text instead (e.g. write alpha, beta, 10^5, or UTF-8 mathematical symbols).
 
 5. DATA VISUALIZATIONS & CHARTS:
-   - You must generate and distribute at least 4–6 high-quality visual elements (JSON charts, KPI blocks, comparison tables) naturally throughout the report.
+   - You must generate EXACTLY 3 JSON charts in the entire report — no more, no fewer. Do NOT generate any circle, donut, or pie charts. Use only bar, line, or area chart types.
    - Define each chart using this exact JSON code block structure (do not add any conversational text inside the code block):
    ```json-chart
    {{
-     "type": "bar" | "donut" | "line" | "area",
+     "type": "bar" | "line" | "area",
      "title": "Chart Title",
      "labels": ["Label A", "Label B", "Label C"],
      "values": [45, 30, 25],
@@ -174,7 +174,7 @@ Classification: BUSINESS INTELLIGENCE
    
 5.5 IMAGES & DIAGRAMS (VERY IMPORTANT)
 
-- Throughout the report, include relevant images wherever they improve understanding.
+- Include EXACTLY 2 image placeholders in the entire report — no more, no fewer.
 - DO NOT use Markdown image syntax.
 - DO NOT use HTML <img> tags.
 - Instead, insert placeholders in exactly this format:
@@ -187,14 +187,8 @@ Examples:
 
 [IMAGE: Transformer Architecture]
 
-[IMAGE: CNN Architecture]
-
-[IMAGE: Electric Vehicle Market Growth]
-
-[IMAGE: Apple Supply Chain]
-
 Rules:
-- Include approximately one image every 2–3 major sections.
+- Place one image in the Introduction or Market Landscape section, and one in the Case Studies or Future Trends section.
 - Only request images that directly support the nearby content.
 - The placeholder must be on its own line.
 - Use short Google-search-friendly queries.
@@ -215,13 +209,13 @@ Rules:
    - Mandatory KPI Dashboard (4 cards, HTML layout)
    - Executive Summary (One-page concise overview, key findings, and takeaways)
    - 1. Introduction & Context (What is the topic, why is it important, current relevance)
-   - 2. Market Landscape & Analysis (Main body sections, core concepts, industry use. Include at least 2 distinct charts: e.g. 1 bar chart for adoption, 1 donut chart for market segmentation, each with its own 'Analysis & Key Insights' section)
-   - 3. Structured Comparison Table (Include a Markdown comparison table contrasting key features/approaches, followed by a Summary of Findings. Optionally add a Bar Chart representing table metrics)
-   - 4. Case Studies (Provide 2-3 real-world organization examples, expanded using the required 7-part format. Include a highly relevant chart cleanly within this section, aligning it properly with the related case study data and maintaining sufficient spacing so it does not overlap or appear disconnected from the text it supports)
-   - 5. Best Practices & Tactical Recommendations (Include 1 Line or Area Chart showing adoption/growth trends)
+   - 2. Market Landscape & Analysis (Main body sections, core concepts, industry use. Include 1 bar chart for market data with its own 'Analysis & Key Insights' section. Do NOT use circle, pie, or donut charts)
+   - 3. Structured Comparison Table (Include a Markdown comparison table contrasting key features/approaches, followed by a Summary of Findings. Do NOT add a chart here)
+   - 4. Case Studies (Provide 2-3 real-world organization examples, expanded using the required 7-part format. Include 1 relevant chart cleanly within this section)
+   - 5. Best Practices & Tactical Recommendations (Do NOT include a chart here — use written analysis only)
    - 6. Future Trends & Strategic Outlook (Next 5-10 years timeline, opportunities, and challenges. Include 1 Forecast Line or Area Chart showing future size/adoption)
-   - 7. Conclusion & Strategic Summary
-   - References (A numbered list of ALL sources used. Place this at the very end under `References`. CRITICAL REQUIREMENT: For EVERY reference entry you MUST use the ACTUAL title and ACTUAL URL from the Sources provided above — do NOT use placeholder text like "Source Title or Organization". Format each entry as: `1. [Actual Title of the Article or Website](https://actual-url-from-sources.com)`. For example, if a source has title "Global AI Market Report" and URL "https://example.com/ai-report", write: `1. [Global AI Market Report](https://example.com/ai-report)`. Every entry MUST be a clickable markdown hyperlink pointing to the real source URL.)
+   - 7. Conclusion & Strategic Summary (Brief wrap-up of key findings and final recommendations)
+   - References (Numbered list of sources in formal consulting/academic citation format. CRITICAL REQUIREMENT: Do NOT include any URLs, web links, or http addresses anywhere. Format each entry as a clean citation, for example: `1. Forbes Tech Council, "The Rise of Digital Currencies," Global Market Analysis, 2026.` or `1. MarketsandMarkets, "Digital Currency Market Size and Growth," Industry Intelligence Report, 2026.`)
 """),
         ("user", "Topic: {topic}\nInstructions: {instructions}\n\nSources:\n{context}")
     ])
@@ -237,18 +231,21 @@ Rules:
 # Ensure at least a few image placeholders exist
 # -----------------------------------------------------------------
 
-    if "[IMAGE:" not in draft:
+    import re
 
-        import re
+    # Count existing image placeholders
+    existing_images = len(re.findall(r'\[IMAGE:', draft))
 
-        section_images = {
-            "Introduction": f"{state['topic']} overview",
-            "Market Landscape": f"{state['topic']} architecture",
-            "Case Studies": f"{state['topic']} case study",
-            "Future Trends": f"{state['topic']} future technology",
-        }
+    if existing_images < 2:
+        # Only inject enough to reach exactly 2
+        section_images = [
+            ("Introduction", f"{state['topic']} overview"),
+            ("Future Trends", f"{state['topic']} future technology"),
+        ]
 
-        for keyword, query in section_images.items():
+        for keyword, query in section_images:
+            if existing_images >= 2:
+                break
 
             pattern = rf"(^#+\s.*{re.escape(keyword)}.*$)"
 
@@ -271,6 +268,14 @@ Rules:
                     replacement,
                     1
                 )
+                existing_images += 1
+
+    # Cap at exactly 2 image placeholders — remove extras
+    image_pattern = r'\[IMAGE:.*?\]'
+    all_image_matches = list(re.finditer(image_pattern, draft))
+    if len(all_image_matches) > 2:
+        for extra_match in all_image_matches[2:]:
+            draft = draft[:extra_match.start()] + draft[extra_match.end():]
         
 
     
