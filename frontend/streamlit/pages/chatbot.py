@@ -477,7 +477,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 st.markdown("### 📄 PDF Document Assistant")
-uploaded_file = st.file_uploader("Upload a PDF document to analyze and ask questions:", type=["pdf"], align = "center")
+uploaded_file = st.file_uploader("Upload a PDF document to analyze and ask questions:", type=["pdf"])
 
 if uploaded_file is not None:
     with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp_file:
