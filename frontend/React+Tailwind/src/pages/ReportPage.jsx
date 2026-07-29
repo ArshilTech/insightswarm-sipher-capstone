@@ -19,6 +19,8 @@ export default function ReportPage() {
   const [report, setReport] = useState(null)
   const [status, setStatus] = useState('loading') // 'loading' | 'completed' | 'failed'
   const [loadingTextIdx, setLoadingTextIdx] = useState(0)
+  const [execSummary, setExecSummary] = useState(null)
+  const [execSummaryLoading, setExecSummaryLoading] = useState(false)
 
   // Cycle through loading text to provide an agentic feel during fetching
   useEffect(() => {
@@ -109,6 +111,32 @@ export default function ReportPage() {
     const link = document.createElement('a')
     link.href = downloadUrl
     link.setAttribute('download', `${report.title || 'research-report'}.pdf`)
+    document.body.appendChild(link)
+    link.click()
+    link.remove()
+  }
+
+  const handleGenerateSummary = async () => {
+    if (execSummaryLoading) return
+    setExecSummaryLoading(true)
+    try {
+      const response = await fetch(`${API_BASE}/research/${runId}/executive-summary`, { method: 'POST' })
+      if (!response.ok) throw new Error(`Status: ${response.status}`)
+      const data = await response.json()
+      setExecSummary(data)
+    } catch (error) {
+      console.error('Error generating executive summary:', error)
+    } finally {
+      setExecSummaryLoading(false)
+    }
+  }
+
+  const handleDownloadSummary = () => {
+    if (!execSummary?.download_url) return
+    const url = execSummary.download_url.startsWith('/') ? `${BACKEND_BASE}${execSummary.download_url}` : execSummary.download_url
+    const link = document.createElement('a')
+    link.href = url
+    link.setAttribute('download', `${report.title || 'executive-summary'}-summary.pdf`)
     document.body.appendChild(link)
     link.click()
     link.remove()
@@ -258,6 +286,15 @@ export default function ReportPage() {
           >
             DOWNLOAD EXPORT (PDF)
           </button>
+
+          <button
+            onClick={handleGenerateSummary}
+            disabled={execSummaryLoading}
+            className="group relative mt-3 w-full overflow-hidden rounded-xl border border-teal-600/20 bg-white py-3.5 text-xs font-bold tracking-wider text-teal-700 shadow-sm transition-all hover:border-teal-500/40 hover:bg-teal-50 active:scale-[0.98] disabled:opacity-50"
+            >
+              {execSummaryLoading ? 'GENERATING...' : '📝 GENERATE EXECUTIVE SUMMARY'}
+          </button>
+
           <button
             onClick={() => navigate('/')}
             className="group relative mt-3 flex w-full items-center justify-center gap-2 overflow-hidden rounded-xl border border-teal-600/20 bg-white py-3.5 text-xs font-bold tracking-wider text-teal-700 shadow-sm transition-all hover:border-teal-500/40 hover:bg-teal-50 active:scale-[0.98]"
@@ -266,6 +303,18 @@ export default function ReportPage() {
             <span>NEW REPORT</span>
           </button>
         </motion.div>
+        {execSummary && (
+          <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="mt-4 rounded-xl border border-teal-100 bg-teal-50/40 p-4">
+            <div className="flex items-center justify-between mb-2">
+              <span className="font-mono text-[10px] tracking-widest text-teal-700 uppercase font-bold">Executive Summary</span>
+              {execSummary.download_url && (
+                <button onClick={handleDownloadSummary} className="text-[10px] font-bold text-teal-700 underline hover:text-teal-900">
+                  Download PDF
+                </button>
+              )}
+            </div>
+          </motion.div>
+        )}
       </div>
 
       <div className="flex h-[50vh] min-h-80 w-full flex-1 flex-col bg-slate-50 z-10 p-4 sm:p-6 xl:p-8 lg:h-full lg:min-h-0">
