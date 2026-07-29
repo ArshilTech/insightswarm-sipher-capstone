@@ -2,6 +2,8 @@ from typing import TypedDict, List, Dict, Any, Annotated
 from langgraph.graph import StateGraph, END
 import operator
 import os
+import re
+import time
 from langchain_tavily import TavilySearch
 from langchain_groq import ChatGroq
 from langchain_core.prompts import ChatPromptTemplate
@@ -14,6 +16,8 @@ load_dotenv()
 # --- Initializations ---
 llm_model = os.getenv("LLM_MODEL", "meta-llama/llama-prompt-guard-2-22m")
 llm = ChatGroq(model=llm_model, temperature=0)
+# Used only when the main report response ends before its final sections.
+tail_llm = ChatGroq(model=llm_model, temperature=0, max_tokens=900)
 
 # Initialize the Tavily Search Tool
 tavily_search = TavilySearch(
@@ -94,6 +98,104 @@ def research_node(state: ResearchState) -> Dict:
     # Because we used Annotated[..., operator.add] in the state, this will append to the list
     return {"sources": all_sources}
 
+def ensure_references(draft: str, sources: List[Dict[str, Any]]) -> str:
+    """Append source links if the model omitted the required References section."""
+    entries = []
+    for source in sources:
+        url = source.get("url", "").strip()
+        title = source.get("title", "").strip()
+        if not url:
+            continue
+        title = title.replace("[", "").replace("]", "") or url
+        entry = f"[{title}]({url})"
+        if entry not in entries:
+            entries.append(entry)
+
+    if not entries:
+        return draft
+
+    references_match = re.search(r"(?im)^#{1,3}\s*references\s*[:\s]*$", draft, flags=re.MULTILINE)
+    if references_match:
+        following_text = draft[references_match.end():]
+        if re.search(r"https?://", following_text):
+            return draft
+        # Add entries after an existing References heading if no URLs were found.
+        return draft.rstrip() + "\n\n" + "\n".join(
+            f"{index}. {entry}" for index, entry in enumerate(entries, start=1)
+        )
+
+    heading = "\n\n## References\n"
+    return f"{draft.rstrip()}{heading}" + "\n".join(
+        f"{index}. {entry}" for index, entry in enumerate(entries, start=1)
+    )
+
+TAIL_SECTION_REQUESTS = {
+    1: "Write exactly `## 1. Introduction & Context` with concise background, relevance, opportunities, and challenges.",
+    2: "Write exactly `## 2. Market Landscape & Analysis` and include one valid bar `json-chart` followed by `### Analysis & Key Insights`.",
+    3: "Write exactly `## 3. Structured Comparison Table` with a Markdown comparison table and `### Summary of Findings`.",
+    4: "Write exactly `## 4. Case Studies` with exactly two concise real-world cases using Background, Challenge, Solution, Implementation, Results, Lessons Learned, and Business Impact.",
+    5: "Write exactly `## 5. Best Practices & Tactical Recommendations` with actionable recommendations, one valid line `json-chart`, and `### Analysis & Key Insights`.",
+    6: "Write exactly `## 6. Future Trends & Strategic Outlook` with next 5-10 year trends, opportunities, challenges, one valid area `json-chart`, and `### Analysis & Key Insights`.",
+    7: "Write exactly `## 7. Conclusion & Strategic Summary` as a complete closing summary with strategic takeaways. Do not add References.",
+}
+
+def build_tail_context(sources: List[Dict[str, Any]]) -> str:
+    """Use compact source excerpts so a tail-repair call stays below Groq's TPM limit."""
+    excerpts = []
+    for index, source in enumerate(sources, start=1):
+        excerpts.append(
+            f"Source {index}: {source.get('title', 'Untitled')} ({source.get('url', '')})\n"
+            f"{source.get('content', '').strip()[:350]}"
+        )
+    return "\n\n".join(excerpts)
+
+def repair_incomplete_tail(draft: str, topic: str, instructions: str, sources: List[Dict[str, Any]], log) -> str:
+    """Replace a truncated final section and generate only the missing report tail."""
+    section_matches = list(re.finditer(r"(?im)^##\s+([1-7])\.\s+.+$", draft))
+    if not section_matches:
+        return draft
+
+    present_sections = {int(match.group(1)) for match in section_matches}
+    missing_sections = [number for number in range(1, 8) if number not in present_sections]
+    if not missing_sections:
+        return draft
+
+    last_match = section_matches[-1]
+    last_section = int(last_match.group(1))
+    trailing_content = draft[last_match.end():].strip()
+    start_section = last_section if trailing_content and not re.search(r"[.!?)]$", trailing_content) else missing_sections[0]
+    trim_match = next((match for match in section_matches if int(match.group(1)) == start_section), None)
+    preserved_draft = draft[:trim_match.start()].rstrip() if trim_match else draft.rstrip()
+    source_context = build_tail_context(sources)
+
+    prompt = ChatPromptTemplate.from_messages([
+        ("system", """You are completing the missing end of a business report. Return only the requested Markdown section.
+Use source-supported claims. Keep the heading exactly as requested. Write 250-400 words, except keep chart analysis
+to 80-120 words. Chart values must be numbers only. Do not use donut or pie charts, image placeholders, a cover,
+a table of contents, or a References heading."""),
+        ("user", "Topic: {topic}\nUser instructions: {instructions}\n\nSources:\n{sources}\n\nTask:\n{task}"),
+    ])
+    chain = prompt | tail_llm | StrOutputParser()
+    repaired_sections = []
+    for section_number in range(start_section, 8):
+        log.info(f"SYNTHESIZER: Repairing missing report section {section_number}.")
+        for attempt in range(2):
+            try:
+                repaired_sections.append(chain.invoke({
+                    "topic": topic,
+                    "instructions": instructions,
+                    "sources": source_context,
+                    "task": TAIL_SECTION_REQUESTS[section_number],
+                }).strip())
+                break
+            except Exception as error:
+                if attempt == 0 and ("rate_limit" in str(error).lower() or "too large" in str(error).lower()):
+                    time.sleep(60)
+                    continue
+                raise
+
+    return "\n\n".join(part for part in [preserved_draft, *repaired_sections] if part)
+
 def synthesize_node(state: ResearchState) -> Dict:
     """Uses an LLM to draft the report based on gathered sources."""
     log = get_run_logger(__name__, state['run_id'])
@@ -151,26 +253,44 @@ Classification: BUSINESS INTELLIGENCE
    - Maintain a ratio of approximately 60–65% deep, meaningful written analysis to 35–40% visual content (charts, tables, KPIs).
    - Every 1–2 pages should contain at least one meaningful visual element.
    - Avoid leaving large blank spaces. Fill pages with high-value analytical explanation.
-   - Each major section must contain 400–800 words of well-structured content.
+   - Each major section must contain 250–400 words of well-structured content.
    - Every subsection must incorporate: Background, Detailed Explanation, Key Concepts, Real-World Examples, Current Industry Practices, Opportunities, Challenges, Expert Analysis, and Actionable Insights.
    - Use headings, bullet points, callout boxes, and plenty of whitespace.
    - Avoid conversational filler. Start directly with `#COVER` and end with references.
    - NO LATEX: WeasyPrint cannot render LaTeX delimiters like $ or $$. Use Unicode characters or plain text instead (e.g. write alpha, beta, 10^5, or UTF-8 mathematical symbols).
 
-5. DATA VISUALIZATIONS & CHARTS:
-   - You must generate and distribute at least 4–6 high-quality visual elements (JSON charts, KPI blocks, comparison tables) naturally throughout the report.
-   - Define each chart using this exact JSON code block structure (do not add any conversational text inside the code block):
-   ```json-chart
-   {{
-     "type": "bar" | "donut" | "line" | "area",
-     "title": "Chart Title",
-     "labels": ["Label A", "Label B", "Label C"],
-     "values": [45, 30, 25],
-     "x_label": "X Axis Label (optional)",
-     "y_label": "Y Axis Label (optional)"
-   }}
-   ```
-   - Immediately follow every chart block with an "📈 Analysis & Key Insights" section of 150–300 words. Do not use short bullet points. Provide a detailed narrative covering: What the chart represents, Major trends, Significant observations, Comparisons with previous years or competitors, Business implications, Strategic recommendations, and Key takeaways.
+5.  DATA VISUALIZATIONS & CHARTS:
+- Generate 3–5 high-quality visual elements throughout the report.
+
+- Every chart MUST be valid JSON.
+
+- IMPORTANT:
+  - The "values" array must contain ONLY numbers.
+  - Never include %, ₹, $, commas, units, words, or symbols inside "values".
+  - Use:
+      Correct: [70, 20, 10]
+      Incorrect: [70%, 20%, 10%]
+
+Use exactly this format:
+
+```json-chart
+{{
+  "type": "bar",
+  "title": "Chart Title",
+  "labels": ["Label A", "Label B", "Label C"],
+  "values": [45, 30, 25],
+  "x_label": "X Axis Label (optional)",
+  "y_label": "Y Axis Label (optional)"
+}}
+```
+
+   Allowed values for "type":
+   - bar
+   - donut
+   - line
+   - area
+
+   - Immediately follow every chart block with an "📈 Analysis & Key Insights" section of 80–120 words. Provide a concise narrative covering the trend, key observation, and business implication.
    
 5.5 IMAGES & DIAGRAMS (VERY IMPORTANT)
 
@@ -203,21 +323,21 @@ Rules:
 
 6. TABLES & SUMMARIES:
    - Include comparison tables where appropriate.
-   - Immediately after every comparison table, write a "Summary of Findings" section (150–250 words) explaining the key differences, strengths, weaknesses, and practical strategic implications of the compared options.
+   - Immediately after every comparison table, write a "Summary of Findings" section (80–120 words) explaining the key differences and practical strategic implications of the compared options.
 
 7. CASE STUDIES:
-   - Expand every case study into a comprehensive format (approx. 250–500 words per case study).
+   - Provide exactly 2 concise case studies (approximately 120–180 words each).
    - Address the following subsections in order: Background, Challenge, Solution, Implementation, Results, Lessons Learned, and Business Impact.
 
 8. CONTENT CHECKLIST (Include all these sections in order):
    - Cover Page metadata
    - Table of Contents
    - Mandatory KPI Dashboard (4 cards, HTML layout)
-   - Executive Summary (One-page concise overview, key findings, and takeaways)
+   - Executive Summary (150–200-word overview, key findings, and takeaways)
    - 1. Introduction & Context (What is the topic, why is it important, current relevance)
    - 2. Market Landscape & Analysis (Main body sections, core concepts, industry use. Include at least 2 distinct charts: e.g. 1 bar chart for adoption, 1 donut chart for market segmentation, each with its own 'Analysis & Key Insights' section)
    - 3. Structured Comparison Table (Include a Markdown comparison table contrasting key features/approaches, followed by a Summary of Findings. Optionally add a Bar Chart representing table metrics)
-   - 4. Case Studies (Provide 2-3 real-world organization examples, expanded using the required 7-part format. Include a highly relevant chart cleanly within this section, aligning it properly with the related case study data and maintaining sufficient spacing so it does not overlap or appear disconnected from the text it supports)
+   - 4. Case Studies (Provide 2-3 real-world organization examples, expanded using the required 7-part format.)
    - 5. Best Practices & Tactical Recommendations (Include 1 Line or Area Chart showing adoption/growth trends)
    - 6. Future Trends & Strategic Outlook (Next 5-10 years timeline, opportunities, and challenges. Include 1 Forecast Line or Area Chart showing future size/adoption)
    - 7. Conclusion & Strategic Summary
@@ -232,6 +352,10 @@ Rules:
         "instructions": state["instructions"],
         "context": context
     })
+    draft = repair_incomplete_tail(
+        draft, state["topic"], state["instructions"], state["sources"], log
+    )
+    draft = ensure_references(draft, state["sources"])
 
 # -----------------------------------------------------------------
 # Ensure at least a few image placeholders exist
