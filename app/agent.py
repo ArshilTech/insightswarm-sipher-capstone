@@ -7,8 +7,8 @@ from langchain_community.document_loaders import PyPDFLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_community.vectorstores import FAISS
 #tools and agent for orchestration
-from langchain_tavily import TavilySearchResults
-from langchain.tools import create_retriever_tool
+from langchain_community.tools import TavilySearchResults
+from langchain.tools.retriever import create_retriever_tool
 from langchain_groq import ChatGroq
 from langchain.agents import create_tool_calling_agent, AgentExecutor
 from langchain_core.prompts import ChatPromptTemplate
