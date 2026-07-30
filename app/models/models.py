@@ -21,7 +21,7 @@ class ResearchRun(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(timezone.utc))
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
 
-    report: Mapped["Report | None"] = relationship("Report", back_populates="run", uselist=False)
+    report: Mapped["Report | None"] = relationship("Report", back_populates="run", uselist=False, cascade="all, delete-orphan")
 
 class Report(Base):
     __tablename__ = "reports"
@@ -38,8 +38,8 @@ class Report(Base):
     expires_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 
     run: Mapped[ResearchRun] = relationship("ResearchRun", back_populates="report")
-    file: Mapped["ReportFile | None"] = relationship("ReportFile", back_populates="report", uselist=False)
-    executive_summary: Mapped["ExecutiveSummary | None"] = relationship("ExecutiveSummary", back_populates="report", uselist=False)
+    file: Mapped["ReportFile | None"] = relationship("ReportFile", back_populates="report", uselist=False, cascade="all, delete-orphan")
+    executive_summary: Mapped["ExecutiveSummary | None"] = relationship("ExecutiveSummary", back_populates="report", uselist=False, cascade="all, delete-orphan")
 
 class ReportFile(Base):
     __tablename__ = "report_files"

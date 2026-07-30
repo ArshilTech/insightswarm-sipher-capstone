@@ -42,6 +42,8 @@ async def run_research_background(initial_state: ResearchState):
             # Remove the think block and all its contents
             final_markdown = re.sub(r"<think>.*?</think>", "", final_markdown, flags=re.DOTALL).strip()
             final_markdown = clean_latex(final_markdown)
+            sources_list = final_state.get("sources", [])
+            final_markdown = format_references_in_markdown(final_markdown, sources=sources_list)
 
             topic = final_state.get("topic", "research_report")
             pdf_path = None
@@ -122,6 +124,59 @@ def clean_latex(text: str) -> str:
     text = re.sub(r'\\([a-zA-Z]+)', r'\1', text)
     
     return text.strip()
+
+def format_references_in_markdown(markdown_content: str, sources: list = None) -> str:
+    """
+    Finds or appends the References section in Markdown, strips links to make entries unclickable,
+    and limits the section to top 5 reference entries.
+    """
+    # CRITICAL: Must use ^ at line start with MULTILINE to avoid matching anchor links like [References](#references) in TOC
+    pattern = r'(^\s*#+\s*(?:\d+[\.\)]\s*)?References\s*:?\s*\n?)(.*)'
+    match = re.search(pattern, markdown_content, flags=re.MULTILINE | re.DOTALL | re.IGNORECASE)
+    
+    if not match:
+        if sources:
+            top_sources = sources[:5]
+            ref_entries = [f"{idx}. {src.get('title', 'Reference ' + str(idx))}" for idx, src in enumerate(top_sources, 1) if src.get('title')]
+            if ref_entries:
+                return markdown_content.strip() + "\n\n# References\n\n" + "\n".join(ref_entries) + "\n"
+        return markdown_content
+
+    header = match.group(1)
+    refs_body = match.group(2)
+
+    # Check if another header follows References
+    next_header_match = re.search(r'\n(#+\s+.*)', refs_body)
+    if next_header_match:
+        following_content = refs_body[next_header_match.start():]
+        refs_body = refs_body[:next_header_match.start()]
+    else:
+        following_content = ""
+
+    lines = [line.strip() for line in refs_body.strip().split('\n') if line.strip()]
+    cleaned_entries = []
+
+    for line in lines:
+        # Ignore HTML tags, KPI cards, or non-reference text
+        if line.startswith("<") or line.startswith("{") or line.startswith("|"):
+            continue
+        line_clean = re.sub(r'\[([^\]]+)\]\([^)]+\)', r'\1', line)
+        line_clean = re.sub(r'<a[^>]*>(.*?)</a>', r'\1', line_clean, flags=re.IGNORECASE)
+        line_clean = re.sub(r'\s*\(https?://[^\)]+\)', '', line_clean)
+        line_clean = re.sub(r'\s*-\s*https?://\S+', '', line_clean)
+        entry_text = re.sub(r'^(\d+[\.\)]\s*|-\s*|\*\s*)', '', line_clean).strip()
+        if entry_text:
+            cleaned_entries.append(entry_text)
+        if len(cleaned_entries) == 5:
+            break
+
+    if not cleaned_entries and sources:
+        top_sources = sources[:5]
+        cleaned_entries = [src.get('title', f"Reference {idx}") for idx, src in enumerate(top_sources, 1) if src.get('title')]
+
+    final_refs = [f"{idx}. {entry}" for idx, entry in enumerate(cleaned_entries, 1)]
+    new_refs_section = "\n\n# References\n\n" + "\n".join(final_refs) + "\n\n" + following_content
+    return markdown_content[:match.start()].strip() + new_refs_section
 
 # --- API Endpoint to Start Research ---
 
@@ -346,9 +401,10 @@ async def delete_report(
     run_id: str,
     session: AsyncSession = Depends(get_async_session)
 ):
-    # Fetch the research run, report, and associated file so the entire item can be removed.
+    # Fetch the research run, report, associated file, and executive summary so the entire item can be removed.
     stmt = select(ResearchRun).where(ResearchRun.id == run_id).options(
-        selectinload(ResearchRun.report).selectinload(Report.file)
+        selectinload(ResearchRun.report).selectinload(Report.file),
+        selectinload(ResearchRun.report).selectinload(Report.executive_summary)
     )
     result = await session.execute(stmt)
     run = result.scalar_one_or_none()
@@ -358,23 +414,34 @@ async def delete_report(
 
     report = run.report
 
-    # Delete the associated PDF file from disk if it exists
-    if report and report.file and os.path.exists(report.file.file_path):
-        try:
-            os.remove(report.file.file_path)
-            logger.info(f"Deleted PDF file at {report.file.file_path}")
-        except Exception as e:
-            logger.error(f"Failed to delete PDF file: {e}", exc_info=True)
-            raise HTTPException(status_code=500, detail="Failed to delete PDF file from disk.")
-
-    # Delete the child file row first so the report delete does not hit a FK constraint.
-    if report and report.file:
-        await session.delete(report.file)
-
-    # Delete the report row and the parent research run from the database.
     if report:
+        # Delete associated PDF file from disk if it exists
+        if report.file and report.file.file_path and os.path.exists(report.file.file_path):
+            try:
+                os.remove(report.file.file_path)
+                logger.info(f"Deleted PDF file at {report.file.file_path}")
+            except Exception as e:
+                logger.warning(f"Could not delete PDF file from disk ({report.file.file_path}): {e}")
+
+        # Delete associated Executive Summary PDF file from disk if it exists
+        if report.executive_summary and report.executive_summary.pdf_file_path and os.path.exists(report.executive_summary.pdf_file_path):
+            try:
+                os.remove(report.executive_summary.pdf_file_path)
+                logger.info(f"Deleted Executive Summary PDF file at {report.executive_summary.pdf_file_path}")
+            except Exception as e:
+                logger.warning(f"Could not delete Executive Summary PDF file from disk ({report.executive_summary.pdf_file_path}): {e}")
+
+        # Delete child rows first so report delete does not hit a Foreign Key constraint
+        if report.file:
+            await session.delete(report.file)
+        if report.executive_summary:
+            await session.delete(report.executive_summary)
+
+        # Delete the report row
         await session.delete(report)
+
+    # Delete the parent research run
     await session.delete(run)
     await session.commit()
 
-    return {"detail": "Report and associated PDF deleted successfully."}
+    return {"detail": "Report and associated assets deleted successfully."}

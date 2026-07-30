@@ -221,7 +221,7 @@ Rules:
    - 5. Best Practices & Tactical Recommendations (Include 1 Line or Area Chart showing adoption/growth trends)
    - 6. Future Trends & Strategic Outlook (Next 5-10 years timeline, opportunities, and challenges. Include 1 Forecast Line or Area Chart showing future size/adoption)
    - 7. Conclusion & Strategic Summary
-   - References (A numbered list of ALL sources used. Place this at the very end under `References`. CRITICAL REQUIREMENT: For EVERY reference entry you MUST use the ACTUAL title and ACTUAL URL from the Sources provided above — do NOT use placeholder text like "Source Title or Organization". Format each entry as: `1. [Actual Title of the Article or Website](https://actual-url-from-sources.com)`. For example, if a source has title "Global AI Market Report" and URL "https://example.com/ai-report", write: `1. [Global AI Market Report](https://example.com/ai-report)`. Every entry MUST be a clickable markdown hyperlink pointing to the real source URL.)
+   - References (A numbered list of the TOP 5 references from where the data was scraped. Place this at the very end under `References`. CRITICAL REQUIREMENT: Make the reference entries UNCLICKABLE — do NOT use markdown hyperlinks (`[Title](url)`) or HTML `<a>` tags. Format each entry as plain text in a standard numbered reference pattern: `1. Actual Title of the Article or Website`. Include at most the TOP 5 references from the provided Sources.)
 """),
         ("user", "Topic: {topic}\nInstructions: {instructions}\n\nSources:\n{context}")
     ])
@@ -237,16 +237,21 @@ Rules:
 # Ensure at least a few image placeholders exist
 # -----------------------------------------------------------------
 
-    if "[IMAGE:" not in draft:
+    import re
 
-        import re
+    existing_count = len(re.findall(r"\[IMAGE:(.*?)\]", draft))
 
-        section_images = {
-            "Introduction": f"{state['topic']} overview",
-            "Market Landscape": f"{state['topic']} architecture"
-        }
+    if existing_count < 2:
 
-        for keyword, query in section_images.items():
+        section_images = [
+            ("Introduction", f"{state['topic']} overview"),
+            ("Market Landscape", f"{state['topic']} architecture"),
+        ]
+
+        for keyword, query in section_images:
+
+            if existing_count >= 2:
+                break
 
             pattern = rf"(^#+\s.*{re.escape(keyword)}.*$)"
 
@@ -269,6 +274,8 @@ Rules:
                     replacement,
                     1
                 )
+
+                existing_count += 1
         
 
     
