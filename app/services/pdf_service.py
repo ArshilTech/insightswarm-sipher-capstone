@@ -524,7 +524,7 @@ def convert_headings(html_content: str) -> str:
     )
     # Convert References h2 heading to h1
     html_content = re.sub(
-        r'<h2([^>]*)>\s*References\s*</h2\s*>',
+        r'<h2([^>]*)>\s*(?:\d+[\.\)]\s*)?References\s*:?\s*</h2\s*>',
         r'<h1\1>References</h1>',
         html_content,
         flags=re.IGNORECASE
@@ -541,7 +541,7 @@ def process_toc(html_content: str) -> str:
         filtered_items = []
         for href, text in items:
             text_clean = text.strip()
-            if re.match(r'^\d+\.', text_clean) or text_clean.lower() == "references":
+            if re.match(r'^\d+\.', text_clean) or re.search(r'references', text_clean, re.IGNORECASE):
                 filtered_items.append(f'<li><a href="{href}"><span>{text_clean}</span></a></li>')
         
         new_toc_html = f'<h2 id="table-of-contents">Table of Contents</h2>\n<ul class="toc-list">\n'
@@ -564,9 +564,31 @@ def process_toc(html_content: str) -> str:
     return html_content
 
 def wrap_references_section(html_content: str) -> str:
-    """Wrap the References heading and its body in a dedicated styled container."""
-    pattern = r'(<h1[^>]*>\s*References\s*</h1>)(.*?)(?=<h[1-4][^>]*>|\Z)'
-    return re.sub(pattern, r'<div class="references-section">\1\2</div>', html_content, flags=re.DOTALL | re.IGNORECASE)
+    """Wrap the References heading and its body in a dedicated styled container, ensuring unclickable links and top 5 items max."""
+    pattern = r'(<h[1-4][^>]*>\s*(?:\d+[\.\)]\s*)?References\s*:?\s*</h[1-4]>)(.*?)(?=<h[1-4][^>]*>|\Z)'
+
+    def clean_ref_match(match):
+        heading = match.group(1)
+        body = match.group(2)
+
+        # Remove <a> tags: <a ...>text</a> -> <span>text</span>
+        body_clean = re.sub(r'<a[^>]*>(.*?)</a>', r'<span>\1</span>', body, flags=re.IGNORECASE)
+
+        # If there's a list (<ol> or <ul>), limit to top 5 <li> items
+        list_match = re.search(r'(<(?:ol|ul)[^>]*>)(.*?)(</(?:ol|ul)>)', body_clean, flags=re.DOTALL | re.IGNORECASE)
+        if list_match:
+            tag_open, list_items, tag_close = list_match.group(1), list_match.group(2), list_match.group(3)
+            li_items = re.findall(r'<li[^>]*>.*?</li>', list_items, flags=re.DOTALL | re.IGNORECASE)
+            if li_items:
+                top_5_items = li_items[:5]
+                body_clean = body_clean.replace(list_match.group(0), f"{tag_open}\n" + "\n".join(top_5_items) + f"\n{tag_close}")
+
+        heading_h1 = re.sub(r'<h[1-4]', '<h1', heading, flags=re.IGNORECASE)
+        heading_h1 = re.sub(r'</h[1-4]>', '</h1>', heading_h1, flags=re.IGNORECASE)
+
+        return f'<div class="references-section">{heading_h1}{body_clean}</div>'
+
+    return re.sub(pattern, clean_ref_match, html_content, flags=re.DOTALL | re.IGNORECASE)
 
 # --- Main PDF Generation Service ---
 
@@ -686,6 +708,13 @@ def generate_pdf_report(markdown_content: str, run_id: str) -> tuple[str, int]:
     raw_html = process_toc(raw_html)
     raw_html = inject_page_breaks(raw_html)
     raw_html = ensure_live_links(raw_html)
+    
+    # Strip any <a> links re-created inside .references-section by ensure_live_links
+    def strip_links_in_references(match):
+        ref_block = match.group(0)
+        return re.sub(r'<a[^>]*>(.*?)</a>', r'<span>\1</span>', ref_block, flags=re.IGNORECASE)
+
+    raw_html = re.sub(r'<div class="references-section">.*?</div>', strip_links_in_references, raw_html, flags=re.DOTALL | re.IGNORECASE)
     
     cover_html = f"""
     <div class="cover-page">
@@ -1215,22 +1244,32 @@ def generate_pdf_report(markdown_content: str, run_id: str) -> tuple[str, int]:
                 color: #0f172a;
             }}
             
-            /* Citations */
+            /* Citations / References */
             .references-section {{
                 margin-top: 40px;
-                border-top: 1px solid #e2e8f0;
                 padding-top: 20px;
+            }}
+            .references-section h1 {{
+                border-bottom: 2px solid #0f172a;
+                padding-bottom: 8px;
+                margin-bottom: 16px;
             }}
             .references-section ol, .references-section ul {{
                 margin-left: 1.2em;
                 padding-left: 0;
             }}
             .references-section li {{
-                margin-bottom: 10px;
+                margin-bottom: 12px;
+                color: #1e293b;
+                font-size: 14px;
+                line-height: 1.5;
+                font-weight: 500;
             }}
-            .references-section a {{
-                color: {theme['primary']};
-                text-decoration: underline;
+            .references-section a, .references-section span {{
+                color: #1e293b !important;
+                text-decoration: none !important;
+                pointer-events: none !important;
+                cursor: default !important;
             }}
         </style>
     </head>
