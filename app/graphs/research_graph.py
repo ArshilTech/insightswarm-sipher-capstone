@@ -243,9 +243,7 @@ Rules:
 
         section_images = {
             "Introduction": f"{state['topic']} overview",
-            "Market Landscape": f"{state['topic']} architecture",
-            "Case Studies": f"{state['topic']} case study",
-            "Future Trends": f"{state['topic']} future technology",
+            "Market Landscape": f"{state['topic']} architecture"
         }
 
         for keyword, query in section_images.items():
