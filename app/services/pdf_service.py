@@ -365,12 +365,19 @@ def generate_svg_chart(chart_data: dict, theme=None) -> str:
 
 def process_charts(markdown_content: str, theme=None) -> str:
     pattern = r"```json-chart\s*\n(.*?)\n\s*```"
-    
+
+    MAX_CHARTS = 3
+    charts_rendered = 0
+
     def replacer(match):
+        nonlocal charts_rendered
+        if charts_rendered >= MAX_CHARTS:
+            return ""
         json_str = match.group(1)
         try:
             chart_data = json.loads(json_str)
             svg_content = generate_svg_chart(chart_data, theme=theme)
+            charts_rendered += 1
             return f'<div class="chart-container">{svg_content}</div>'
         except Exception as e:
             return f'<div class="chart-error">Chart Rendering Error: {str(e)}</div>'
@@ -385,7 +392,7 @@ def process_images(markdown_content: str) -> str:
     print(f"\nFound {len(matches)} image placeholders")
 
     # Maximum number of images in one report
-    MAX_IMAGES = 3
+    MAX_IMAGES = 2
 
     used_queries = set()
     used_image_hashes = set()

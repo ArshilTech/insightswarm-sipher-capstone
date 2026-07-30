@@ -237,16 +237,21 @@ Rules:
 # Ensure at least a few image placeholders exist
 # -----------------------------------------------------------------
 
-    if "[IMAGE:" not in draft:
+    import re
 
-        import re
+    existing_count = len(re.findall(r"\[IMAGE:(.*?)\]", draft))
 
-        section_images = {
-            "Introduction": f"{state['topic']} overview",
-            "Market Landscape": f"{state['topic']} architecture"
-        }
+    if existing_count < 2:
 
-        for keyword, query in section_images.items():
+        section_images = [
+            ("Introduction", f"{state['topic']} overview"),
+            ("Market Landscape", f"{state['topic']} architecture"),
+        ]
+
+        for keyword, query in section_images:
+
+            if existing_count >= 2:
+                break
 
             pattern = rf"(^#+\s.*{re.escape(keyword)}.*$)"
 
@@ -269,6 +274,8 @@ Rules:
                     replacement,
                     1
                 )
+
+                existing_count += 1
         
 
     
