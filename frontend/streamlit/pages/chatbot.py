@@ -1,12 +1,31 @@
+from sentence_transformers.util import similarity
+from pathlib import Path
+import os
 import streamlit as st
 import requests
-from pathlib import Path
+#document loader
+from langchain_community.document_loaders import PyPDFLoader
+#vector store
+from langchain_community.vectorstores import Chroma
+#llm
+from langchain_groq import ChatGroq
+# Embeddings
+from langchain_community.embeddings.sentence_transformer import (
+    SentenceTransformerEmbeddings,
+)
+
 
 FAVICON_PATH = Path(__file__).resolve().parent.parent / "favicon.svg"
 
+#change app.py to dashboard
+st.markdown("<div class='back-button-wrap' style='position: absolute !important; top: 2rem !important; left: 2rem !important; z-index: 1000 !important; width: auto !important;'>", unsafe_allow_html=True)
+if st.button("← Back to Dashboard", key="back_dashboard"):
+    st.switch_page("streamlit-app.py")
+st.markdown("</div>", unsafe_allow_html=True)
+
 #-------Page Config------
 st.set_page_config(
-    page_title="🤖 InsightSwarm - Chatbot",
+    page_title="🤖 Comb",
     page_icon=str(FAVICON_PATH),
     layout="wide",
     initial_sidebar_state="collapsed",
@@ -370,6 +389,68 @@ st.markdown(
             font-family: var(--font-display) !important;
             color: var(--ink) !important;
         }
+
+
+        /* User message — align RIGHT */
+        .stChatMessage:has([data-testid="stChatMessageAvatarUser"]),
+        [data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarUser"]) {
+            margin-left: 15% !important;
+            margin-right: 0 !important;
+            border-left: none !important;
+            border-right: 3px solid #0d9488 !important;
+            flex-direction: row-reverse !important;
+            text-align: right !important;
+        }
+
+        .stChatMessage:has([data-testid="stChatMessageAvatarUser"]) p,
+        [data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarUser"]) p {
+            text-align: right !important;
+        }
+
+        /* Assistant message — align LEFT */
+        .stChatMessage:has([data-testid="stChatMessageAvatarAssistant"]),
+        [data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarAssistant"]) {
+            margin-right: 15% !important;
+            margin-left: 0 !important;
+            border-left: 3px solid #7dd3c7 !important;
+            border-right: none !important;
+            text-align: left !important;
+        }
+
+        .stChatMessage:has([data-testid="stChatMessageAvatarAssistant"]) p,
+        [data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarAssistant"]) p {
+            text-align: left !important;
+        }
+
+        /* Chat message text styling */
+        .stChatMessage p,
+        .stChatMessage span,
+        [data-testid="stChatMessage"] p,
+        [data-testid="stChatMessage"] span {
+            font-family: var(--font-body) !important;
+            color: #072e2a !important;
+            font-size: 0.95rem !important;
+            line-height: 1.65 !important;
+        }
+
+        /* Chat input bar styling */
+        [data-testid="stChatInput"] {
+            border-radius: 18px !important;
+        }
+
+        [data-testid="stChatInput"] textarea {
+            font-family: var(--font-body) !important;
+            background: #ffffff !important;
+            background-color: #ffffff !important;
+            border: 1px solid rgba(7, 46, 42, 0.1) !important;
+            border-radius: 12px !important;
+            box-shadow: 0 1px 2px rgba(7, 46, 42, 0.05), 0 8px 20px -10px rgba(13, 148, 136, 0.25) !important;
+        }
+
+        [data-testid="stChatInput"] textarea:focus {
+            border-color: #0d9488 !important;
+            box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.15) !important;
+        }
     </style>
     """,
     unsafe_allow_html=True,
@@ -386,8 +467,93 @@ st.markdown(
 """, unsafe_allow_html=True
 )
 
-#change app.py to dashboard
-st.markdown("<div class='back-button-wrap' style='position: absolute !important; top: 2rem !important; left: 2rem !important; z-index: 1000 !important; width: auto !important;'>", unsafe_allow_html=True)
-if st.button("← Back to Dashboard", key="back_dashboard"):
-    st.switch_page("streamlit-app.py")
-st.markdown("</div>", unsafe_allow_html=True)
+import tempfile
+from langchain_community.document_loaders import PyPDFLoader
+from langchain_text_splitters import RecursiveCharacterTextSplitter
+from langchain_core.prompts import PromptTemplate
+from langchain_classic.chains import RetrievalQA
+from dotenv import load_dotenv
+
+load_dotenv()
+
+st.markdown("### 📄 PDF Document Assistant")
+uploaded_file = st.file_uploader("Upload a PDF document to analyze and ask questions:", type=["pdf"])
+
+# Split documents into chunks
+def split_docs(documents, chunk_size=500, chunk_overlap=100):
+  text_splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=100)
+  docs = text_splitter.split_documents(documents)
+  return docs
+
+if uploaded_file is not None:
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp_file:
+        tmp_file.write(uploaded_file.getvalue())
+        tmp_path = tmp_file.name
+
+    try:
+        with st.spinner("Processing PDF and indexing document content..."):
+            loader = PyPDFLoader(tmp_path)
+            documents = loader.load()
+
+            new_pages = split_docs(documents)
+
+            embeddings = SentenceTransformerEmbeddings(model_name="all-MiniLM-L6-v2")
+            db = Chroma.from_documents(new_pages, embeddings)
+
+            retriever = db.as_retriever(similarity_score_threshold = 0.9)
+
+            llm_model = os.getenv("LLM_MODEL", "meta-llama/llama-prompt-guard-2-22m")
+            llm = ChatGroq(model=llm_model, temperature=0.2)
+
+            prompt_template = """You are a helpful AI assistant. Use the following context from the uploaded PDF document to answer the user's question clearly and concisely. If the answer cannot be found in the context, state that clearly.
+
+                                Context:
+                                {context}
+
+                                Question:
+                                {question}"""
+            
+            PROMPT = PromptTemplate(template = f"[INST] {prompt_template} [/INST]", input_variables=["context", "question"])
+
+            qa_chain = RetrievalQA.from_chain_type(
+                llm = llm,
+                chain_type='stuff',
+                retriever= retriever,
+                input_key = 'query',
+                return_source_documents = True,
+                chain_type_kwargs={"prompt":PROMPT}
+            )
+
+        st.success(f"✅ Successfully indexed **{uploaded_file.name}** ({len(documents)} pages, {len(new_pages)} chunks)!")
+
+        if "messages" not in st.session_state:
+            st.session_state["messages"] = []
+
+        for msg in st.session_state["messages"]:
+            with st.chat_message(msg["role"]):
+                st.markdown(msg["content"])
+
+        # Visible fallback input (always rendered) so users always have a clear box to type in.
+        col_q, col_btn = st.columns([8, 1])
+        query = col_q.chat_input(placeholder="Type your question here and press Ask")
+
+        if query:
+            st.session_state["messages"].append({"role": "user", "content": query})
+            with st.chat_message("user"):
+                st.markdown(query)
+
+            with st.chat_message("assistant"):
+                with st.spinner("Analyzing document content..."):
+                    res = qa_chain(query)
+                    answer = res.get("result", "Sorry, I could not generate an answer.")
+                    st.markdown(answer)
+                    st.session_state["messages"].append({"role": "assistant", "content": answer})
+
+    finally:
+        if os.path.exists(tmp_path):
+            os.remove(tmp_path)
+else:
+    st.info("💡 Please upload a PDF document above to start asking questions!")
+
+
+
