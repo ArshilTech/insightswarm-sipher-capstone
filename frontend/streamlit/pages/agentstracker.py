@@ -426,6 +426,7 @@ st.markdown(
             transform: translateX(-2px) !important;
             border-color: rgba(13, 148, 136, 0.3) !important;
             box-shadow: var(--shadow-md) !important;
+        }
 
         .small-chip {
             display: inline-block;
