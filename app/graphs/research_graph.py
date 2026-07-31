@@ -213,7 +213,6 @@ Rules:
    - Cover Page metadata
    - Table of Contents
    - Mandatory KPI Dashboard (4 cards, HTML layout)
-   - Executive Summary (One-page concise overview, key findings, and takeaways)
    - 1. Introduction & Context (What is the topic, why is it important, current relevance)
    - 2. Market Landscape & Analysis (Main body sections, core concepts, industry use. Include at least 2 distinct charts: e.g. 1 bar chart for adoption, 1 donut chart for market segmentation, each with its own 'Analysis & Key Insights' section)
    - 3. Structured Comparison Table (Include a Markdown comparison table contrasting key features/approaches, followed by a Summary of Findings. Optionally add a Bar Chart representing table metrics)
