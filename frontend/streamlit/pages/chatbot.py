@@ -25,7 +25,7 @@ st.markdown("</div>", unsafe_allow_html=True)
 
 #-------Page Config------
 st.set_page_config(
-    page_title="🤖 Comb",
+    page_title="Comb - InsightSwarm's AI Assistant",
     page_icon=str(FAVICON_PATH),
     layout="wide",
     initial_sidebar_state="collapsed",
@@ -460,8 +460,8 @@ st.markdown(
 st.markdown(
     """
     <div class="hero">
-    <h1>Chatbot</h1>
-    <p>InsightSwarm AI Assistant. Turn Static Reports into Dynamic Conversations.</p>
+    <h1>COMB</h1>
+    <p>Welcome to Comb, InsightSwarm's AI Assistant. Turn Static Reports into Dynamic Conversations.</p>
     </div>
     <div class="divider"></div>
 """, unsafe_allow_html=True
@@ -524,7 +524,7 @@ if uploaded_file is not None:
                 chain_type_kwargs={"prompt":PROMPT}
             )
 
-        st.success(f"✅ Successfully indexed **{uploaded_file.name}** ({len(documents)} pages, {len(new_pages)} chunks)!")
+        st.success(f"Successfully indexed!")
 
         if "messages" not in st.session_state:
             st.session_state["messages"] = []
