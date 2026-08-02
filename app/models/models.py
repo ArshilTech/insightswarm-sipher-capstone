@@ -3,14 +3,24 @@ from sqlalchemy import String, Integer, Text, DateTime, ForeignKey, JSON
 from sqlalchemy.orm import relationship, Mapped, mapped_column
 from datetime import datetime, timezone
 from app.db.database import Base
+from fastapi_users.db import SQLAlchemyBaseUserTableUUID
 
 def generate_uuid():
     return str(uuid.uuid4())
+
+# User model representing a user in the database
+class User(Base, SQLAlchemyBaseUserTableUUID):
+    research_runs: Mapped[list["ResearchRun"]] = relationship(
+        "ResearchRun",
+        back_populates="user",
+        cascade="all, delete-orphan"
+    )
 
 class ResearchRun(Base):
     __tablename__ = "research_runs"
 
     id: Mapped[str] = mapped_column(String, primary_key=True, default=generate_uuid)
+    user_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("user.id"), nullable=False)
     topic: Mapped[str] = mapped_column(String, nullable=False)
     instructions: Mapped[str | None] = mapped_column(Text, nullable=True)
     depth: Mapped[str] = mapped_column(String, default="standard") # e.g., standard, deep
@@ -21,6 +31,7 @@ class ResearchRun(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(timezone.utc))
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
 
+    user: Mapped["User | None"] = relationship("User", back_populates="research_runs")
     report: Mapped["Report | None"] = relationship("Report", back_populates="run", uselist=False, cascade="all, delete-orphan")
 
 class Report(Base):
