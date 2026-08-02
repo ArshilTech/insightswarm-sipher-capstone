@@ -7,6 +7,9 @@ from app.db.database import engine
 from fastapi.middleware.cors import CORSMiddleware
 from app.core import setup_logging, get_logger
 
+from app.user import fastapi_users, current_active_user, auth_backend
+from app.models.user import UserCreate, UserRead, UserUpdate
+
 # Setup logging before app creation
 setup_logging()
 logger = get_logger(__name__)
@@ -37,6 +40,41 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+)
+
+# Include the authentication router for JWT authentication
+app.include_router(
+    fastapi_users.get_auth_router(auth_backend),
+    prefix="/auth/jwt",
+    tags=["auth"]
+)
+
+# Include the user management router for user-related operations
+app.include_router(
+    fastapi_users.get_register_router(UserRead, UserCreate),
+    prefix="/auth",
+    tags=["auth"]
+)
+
+# Include the user management router for user-related operations
+app.include_router(
+    fastapi_users.get_reset_password_router(),
+    prefix="/auth",
+    tags=["auth"]
+)
+
+# Include the user management router for user-related operations
+app.include_router(
+    fastapi_users.get_verify_router(UserRead),
+    prefix="/auth",
+    tags=["auth"]
+)
+
+# Include the user management router for user-related operations
+app.include_router(
+    fastapi_users.get_users_router(UserRead, UserUpdate),
+    prefix="/users",
+    tags=["users"]
 )
 
 # HTTP middleware for request logging
