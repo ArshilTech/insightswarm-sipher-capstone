@@ -72,7 +72,7 @@ const letterVariants = {
   },
 };
 
-const LANDING_URL = import.meta.env.VITE_LANDING_URL || 'http://localhost:3001';
+const LANDING_URL = '/';
 
 export default function SubmitPage() {
   const navigate = useNavigate();
