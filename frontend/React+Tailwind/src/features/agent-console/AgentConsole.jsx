@@ -24,7 +24,6 @@ const lines = [
 ]
 
 function AgentConsole() {
-  const [displayedLines, setDisplayedLines] = useState([])
   const [lineIndex, setLineIndex] = useState(0)
   const [charIndex, setCharIndex] = useState(0)
 
@@ -32,34 +31,18 @@ function AgentConsole() {
     const currentLine = lines[lineIndex]
 
     if (charIndex < currentLine.text.length) {
-      const timer = setTimeout(() => {
-        setDisplayedLines((previous) => {
-          const updated = [...previous]
-
-          if (!updated[lineIndex]) {
-            updated[lineIndex] = {
-              tag: currentLine.tag,
-              text: "",
-            }
-          }
-
-          updated[lineIndex] = {
-            ...updated[lineIndex],
-            text: currentLine.text.slice(0, charIndex + 1),
-          }
-
-          return updated.slice(-5)
-        })
-
-        setCharIndex((previous) => previous + 1)
-      }, 26)
+      const timer = setTimeout(() => setCharIndex((previous) => previous + 1), 26)
 
       return () => clearTimeout(timer)
     }
 
     const timer = setTimeout(() => {
+      if (lineIndex === lines.length - 1) {
+        setLineIndex(0)
+      } else {
+        setLineIndex((previous) => previous + 1)
+      }
       setCharIndex(0)
-      setLineIndex((previous) => (previous + 1) % lines.length)
     }, lineIndex === lines.length - 1 ? 1300 : 260)
 
     return () => clearTimeout(timer)
@@ -91,21 +74,32 @@ function AgentConsole() {
       {/* Console body */}
       <div className="min-h-[210px] p-[18px] font-['JetBrains_Mono'] text-[0.82rem] leading-[1.9] text-[#3f5f5a]">
 
-        {displayedLines.map((line, index) => (
-          <div
-            key={`${line.tag}-${index}`}
-            className="whitespace-nowrap"
-          >
-            <span className="text-[#0f766e]">
-              {line.tag} →
-            </span>{" "}
-            <span>{line.text}</span>
+        {lines.slice(0, lineIndex + 1).map((line, index) => {
+          const isCurrentLine = index === lineIndex
+          const halfwayPoint = Math.floor(line.text.length / 2)
+          // Show cursor only on current line while charIndex has not passed 50% of the text length
+          const showCursor = isCurrentLine && charIndex <= halfwayPoint
 
-            {index === displayedLines.length - 1 && (
-              <span className="ml-[2px] inline-block h-[14px] w-[1px] animate-pulse bg-[#0d9488]" />
-            )}
-          </div>
-        ))}
+          return (
+            <div
+              key={line.tag}
+              className="whitespace-nowrap"
+            >
+              <span className="text-[#0f766e]">
+                {line.tag} →
+              </span>{" "}
+              <span>
+                {isCurrentLine
+                  ? line.text.slice(0, charIndex)
+                  : line.text}
+              </span>
+
+              {showCursor && (
+                <span className="ml-[3px] inline-block h-[1.1em] w-[7px] translate-y-[2px] animate-pulse bg-[#0d9488]" />
+              )}
+            </div>
+          )
+        })}
 
       </div>
     </div>

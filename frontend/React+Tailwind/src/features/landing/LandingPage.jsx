@@ -8,7 +8,7 @@ import Marquee from "./components/Marquee"
 import SwarmBackground from "./components/SwarmBackground"
 import HowItWorks from "./components/HowItWorks"
 
-function App() {
+function LandingPage() {
   const [authOpen, setAuthOpen] = useState(false)
   const [authMode, setAuthMode] = useState("signup")
   const [authMessage, setAuthMessage] = useState("")
@@ -52,6 +52,7 @@ function App() {
   function handleLogout() {
     localStorage.removeItem("insightswarm_token")
     localStorage.removeItem("insightswarm_user")
+    document.cookie = "insightswarm_token=; Path=/; Max-Age=0; SameSite=Lax"
     setUser(null)
     try {
       const bc = new BroadcastChannel("insightswarm_auth")
@@ -110,4 +111,4 @@ function App() {
   )
 }
 
-export default App
+export default LandingPage

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react"
 
-const AUTH_API = "http://localhost:8000"
+const AUTH_API = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000"
 const TOKEN_KEY = "insightswarm_token"
 const USER_KEY = "insightswarm_user"
 
@@ -22,6 +22,8 @@ function AuthModal({
   // for a different reason.
   useEffect(() => {
     if (isOpen) {
+      // The modal must reset its controlled fields on each open.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setMode(initialMode)
       setError("")
       setPassword("")
@@ -236,6 +238,10 @@ function AuthModal({
         USER_KEY,
         JSON.stringify(profile)
       )
+
+      // Cookies are shared by localhost across ports, allowing the Streamlit
+      // dashboard to use the same authenticated session.
+      document.cookie = `${TOKEN_KEY}=${encodeURIComponent(data.access_token)}; Path=/; Max-Age=3600; SameSite=Lax`
 
       if (onLogin) {
         onLogin(data.access_token, profile)

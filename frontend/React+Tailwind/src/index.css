@@ -1,7 +1,6 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
 @import "tailwindcss";
-@source "../../landing-react/src";
-@import "../../landing-react/src/index.css";
+@source "./features";
 
 @theme {
   --font-sans: 'Inter', system-ui, sans-serif;
@@ -705,4 +704,39 @@ body {
   50% {
     box-shadow: 0 0 0 6px rgba(20, 184, 166, 0.08), 0 0 20px rgba(20, 184, 166, 0.3);
   }
+}
+
+/* Landing feature animations */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(35px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes gradientFlow {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+@keyframes meshShift {
+  0%, 100% { filter: hue-rotate(0deg) saturate(1); }
+  50% { filter: hue-rotate(6deg) saturate(1.08); }
+}
+
+@keyframes marqueeScroll {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+
+@keyframes modalEntry {
+  from { opacity: 0; transform: translateY(20px) scale(0.96); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes authShake {
+  0%, 100% { transform: translateX(0); }
+  15% { transform: translateX(-8px); }
+  30% { transform: translateX(6px); }
+  45% { transform: translateX(-4px); }
+  60% { transform: translateX(3px); }
+  75% { transform: translateX(-1px); }
 }

@@ -10,7 +10,7 @@ const LOADING_STEPS = [
   'Formatting report output...'
 ]
 
-const BACKEND_BASE = 'http://127.0.0.1:8000'
+const BACKEND_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
 const API_BASE = `${BACKEND_BASE}/api`
 
 function getAuthToken() {
@@ -78,6 +78,8 @@ export default function ReportPage() {
       }
     }
 
+    // Reset the view when navigating directly between report IDs.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setStatus('loading')
     fetchReport()
 
@@ -134,6 +136,8 @@ export default function ReportPage() {
       active = false
       if (blobUrl) URL.revokeObjectURL(blobUrl)
     }
+    // getFullDownloadUrl depends only on the report captured by this effect.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [report, runId])
 
   const getPagesCount = () => {

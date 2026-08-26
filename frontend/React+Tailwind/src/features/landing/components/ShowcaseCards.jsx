@@ -1,5 +1,3 @@
-import { useState } from "react"
-
 const cards = [
   {
     type: "workspace",
@@ -12,7 +10,6 @@ const cards = [
       "Built for researchers",
     ],
     button: "Open Workspace",
-    url: "http://localhost:5173",
   },
   {
     type: "dashboard",
@@ -25,7 +22,6 @@ const cards = [
       "Built for operators",
     ],
     button: "Open Dashboard",
-    url: "http://localhost:8501",
   },
 ]
 
@@ -145,8 +141,6 @@ function DashboardIcon() {
 }
 
 function ShowcaseCards({ onDashboardClick, onWorkspaceClick, onWorkspaceAuthRequired }) {
-  const [hoveredCard, setHoveredCard] = useState(null)
-
   function handleCardClick(card) {
     const token = localStorage.getItem("insightswarm_token")
 
@@ -170,7 +164,8 @@ function ShowcaseCards({ onDashboardClick, onWorkspaceClick, onWorkspaceAuthRequ
       }
     }
 
-    window.open(card.url, "_blank")
+    const dashboardUrl = `${window.location.protocol}//${window.location.hostname}:8501`
+    window.open(dashboardUrl, "_blank")
   }
 
   return (
@@ -178,8 +173,6 @@ function ShowcaseCards({ onDashboardClick, onWorkspaceClick, onWorkspaceAuthRequ
       {cards.map((card) => (
         <article
           key={card.type}
-          onMouseEnter={() => setHoveredCard(card.type)}
-          onMouseLeave={() => setHoveredCard(null)}
           onClick={() => handleCardClick(card)}
           className={`
             group relative cursor-pointer overflow-hidden rounded-[22px]

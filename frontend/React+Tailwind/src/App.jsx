@@ -1,7 +1,7 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
-import LandingPage from '../../landing-react/src/App'
-import SubmitPage from './pages/SubmitPage'
-import ReportPage from './pages/ReportPage'
+import LandingPage from './features/landing/LandingPage'
+import SubmitPage from './features/research/pages/SubmitPage'
+import ReportPage from './features/research/pages/ReportPage'
 
 export default function App() {
   return (

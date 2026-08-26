@@ -1,4 +1,4 @@
-import AgentConsole from "./AgentConsole"
+import AgentConsole from "../../agent-console/AgentConsole"
 function Hero() {
   return (
     <section className="grid grid-cols-1 items-center gap-12 px-1 py-16 md:grid-cols-[1.05fr_0.95fr] md:gap-12 md:py-16">

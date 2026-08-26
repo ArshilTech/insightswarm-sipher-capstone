@@ -4,9 +4,10 @@ import { motion, AnimatePresence } from 'framer-motion';
 import ResearchHeroAnimation from '../components/ResearchHeroAnimation';
 import ResearchPipelineAnimation from '../components/ResearchPipelineAnimation';
 import { LoadingSpinner } from '../components/Feedback';
-import { checkQuery } from '../utils/keywordFilter';
+import { checkQuery } from '../../../utils/keywordFilter';
 
-const API_BASE = 'http://127.0.0.1:8000/api';
+const BACKEND_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+const API_BASE = `${BACKEND_BASE}/api`;
 
 const headingWords = ['Launch', 'Research'];
 
@@ -58,20 +59,6 @@ const headingVariants = {
   },
 };
 
-const letterVariants = {
-  hidden: { opacity: 0, y: 18 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    transition: {
-      type: 'spring',
-      stiffness: 180,
-      damping: 18,
-      duration: 0.35,
-    },
-  },
-};
-
 const LANDING_URL = '/';
 
 export default function SubmitPage() {
@@ -88,6 +75,8 @@ export default function SubmitPage() {
     if (cookieToken && !localStorage.getItem('insightswarm_token')) {
       localStorage.setItem('insightswarm_token', cookieToken);
     }
+    // The effect synchronizes React state with persisted browser storage.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsLoggedIn(!!localToken);
 
     // 2. BroadcastChannel for instant cross-tab logout & login sync
@@ -108,7 +97,7 @@ export default function SubmitPage() {
         }
       };
     } catch {
-
+      // BroadcastChannel is unavailable in this browser.
     }
 
     // 3. Request auth from window.opener if opened from landing page
