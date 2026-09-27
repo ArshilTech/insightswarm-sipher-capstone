@@ -112,6 +112,8 @@ export default function ResearchPipelineAnimation({ isActive, onComplete, topic 
 
     if (activeStep >= PIPELINE_STEPS.length) {
       // All steps done
+      // This state marks the animation's terminal step before completion.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setAllDone(true);
       const completeTimeout = setTimeout(() => {
         onComplete?.();

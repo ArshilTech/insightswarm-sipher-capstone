@@ -32,13 +32,15 @@ class UserManager(UUIDIDMixin, BaseUserManager[User, uuid.UUID]):
     async def on_after_forgot_password(
         self, user: User, token: str, request: Optional[Request] = None
     ):
-        print(f"User {user.id} has forgot their password. Reset token: {token}")
+        # Send this token through a password-reset delivery service; never log it.
+        return
 
     # Override the on_after_request_verify method to perform actions after a user requests email verification
     async def on_after_request_verify(
         self, user: User, token: str, request: Optional[Request] = None
     ):
-        print(f"Verification requested for user {user.id}. Verification token: {token}")
+        # Send this token through an email-verification delivery service; never log it.
+        return
 
 # Async generator function to provide a user manager instance
 async def get_user_manager(user_db : SQLAlchemyUserDatabase = Depends(get_user_db)):
